@@ -82,15 +82,15 @@ font-family:Rubik;
 }
 
 .buy{
-
-color:#4cff8f;
-
+background:#16c784;
+color:white;
+padding:10px;
 }
 
 .sell{
-
-color:#ff5c5c;
-
+background:#ea3943;
+color:white;
+padding:10px;
 }
 
 #advisor{

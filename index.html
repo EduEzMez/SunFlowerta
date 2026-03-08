@@ -4,6 +4,7 @@
 <head>
 
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>Kaspa Trading Terminal</title>
 
@@ -25,17 +26,22 @@
 
 <h1>Kaspa Trading Terminal</h1>
 
+<button id="refreshBtn">Actualizar</button>
+
 </header>
 
+
+<!-- API STATUS -->
 <div class="card">
 
 <h3>API Source</h3>
 
-<div id="apiSource">-</div>
+<div id="apiSource">Detectando...</div>
 
 </div>
 
 
+<!-- DASHBOARD -->
 <div class="dashboard">
 
 <div class="card">
@@ -46,6 +52,21 @@
 
 </div>
 
+<div class="card">
+
+<h3>Volumen 24h</h3>
+
+<div id="volume">-</div>
+
+</div>
+
+<div class="card">
+
+<h3>Market Cap</h3>
+
+<div id="marketcap">-</div>
+
+</div>
 
 <div class="card">
 
@@ -55,7 +76,6 @@
 
 </div>
 
-
 <div class="card">
 
 <h3>RSI</h3>
@@ -63,7 +83,6 @@
 <div id="rsi">-</div>
 
 </div>
-
 
 <div class="card">
 
@@ -76,9 +95,11 @@
 </div>
 
 
+<!-- CHART -->
 <div id="chart"></div>
 
 
+<!-- SIGNALS -->
 <div class="signals">
 
 <h2>Trading Signal</h2>
@@ -88,6 +109,14 @@
 <div id="advisor"></div>
 
 </div>
+
+
+<!-- FOOTER -->
+<footer>
+
+<div id="status">Inicializando sistema...</div>
+
+</footer>
 
 
 <script src="script.js"></script>

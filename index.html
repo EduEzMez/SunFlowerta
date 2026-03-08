@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌻 SFL Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sun: #FFCC00;
+  --amber: #FF9900;
+  --green: #3EAF5A;
+  --green-dim: #2A7A3F;
+  --sky: #0B1120;
+  --panel: rgba(15,25,45,0.92);
+  --border: rgba(255,204,0,0.18);
+  --text: #E6EDF3;
+  --muted: #7B8EA0;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'DM Mono', monospace;
+  background: var(--sky); color: var(--text); min-height: 100vh;
+  background-image:
+    radial-gradient(ellipse 60% 40% at 15% 60%, rgba(62,175,90,0.07) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 50% at 85% 20%, rgba(255,204,0,0.06) 0%, transparent 60%);
+}
+body::after {
+  content:''; position:fixed; inset:0;
+  background-image: linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+  background-size: 32px 32px; pointer-events:none; z-index:0;
+}
+.wrap { position:relative; z-index:1; max-width:1080px; margin:0 auto; padding:28px 20px; }
+header {
+  display:flex; align-items:center; justify-content:space-between;
+  flex-wrap:wrap; gap:14px; margin-bottom:28px;
+  padding-bottom:20px; border-bottom:1px solid var(--border);
+}
+.logo { display:flex; align-items:center; gap:14px; }
+.sun-spin {
+  font-size:2.4rem; display:inline-block;
+  animation: sunPulse 4s ease-in-out infinite;
+  filter: drop-shadow(0 0 12px rgba(255,204,0,0.5));
+}
+@keyframes sunPulse {
+  0%,100% { transform:scale(1) rotate(0deg); filter:drop-shadow(0 0 10px rgba(255,204,0,0.4)); }
+  50% { transform:scale(1.08) rotate(10deg); filter:drop-shadow(0 0 22px rgba(255,204,0,0.7)); }
+}
+.logo-text h1 {
+  font-family:'Pixelify Sans',sans-serif; font-size:1.6rem; font-weight:700;
+  color:var(--sun); text-shadow:0 0 24px rgba(255,204,0,0.35); line-height:1;
+}
+.logo-text p { font-size:0.65rem; color:var(--muted); letter-spacing:3px; margin-top:3px; }
+.controls { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.controls label { font-size:0.72rem; color:var(--muted); letter-spacing:1px; }
+.controls input[type=number] {
+  width:90px; padding:7px 10px;
+  background:rgba(255,255,255,0.04); border:1px solid var(--border);
+  border-radius:5px; color:var(--text);
+  font-family:'DM Mono',monospace; font-size:0.9rem; outline:none;
+}
+.controls input:focus { border-color:rgba(255,204,0,0.5); }
+.btn-load {
+  padding:7px 18px;
+  background:linear-gradient(135deg,var(--green-dim),var(--green));
+  border:none; border-radius:5px; color:#fff;
+  font-family:'Pixelify Sans',sans-serif; font-size:0.95rem;
+  cursor:pointer; transition:all 0.2s;
+  box-shadow:0 0 16px rgba(62,175,90,0.25);
+}
+.btn-load:hover { transform:translateY(-1px); box-shadow:0 4px 20px rgba(62,175,90,0.4); }
+.btn-load:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+.tabs {
+  display:flex; gap:3px; flex-wrap:wrap;
+  background:rgba(255,255,255,0.025); padding:5px;
+  border-radius:8px; border:1px solid var(--border); margin-bottom:24px;
+}
+.tab {
+  padding:8px 20px; border:none; border-radius:5px;
+  background:transparent; color:var(--muted);
+  font-family:'Pixelify Sans',sans-serif; font-size:0.9rem;
+  cursor:pointer; transition:all 0.18s;
+}
+.tab:hover { color:var(--text); background:rgba(255,255,255,0.04); }
+.tab.on { background:rgba(255,204,0,0.1); color:var(--sun); border:1px solid rgba(255,204,0,0.28); }
+.sec { display:none; } .sec.on { display:block; }
+.loading {
+  display:flex; flex-direction:column; align-items:center;
+  justify-content:center; padding:64px 24px; gap:14px;
+  color:var(--muted); font-size:0.85rem;
+}
+.ring {
+  width:36px; height:36px;
+  border:3px solid rgba(255,204,0,0.15); border-top-color:var(--sun);
+  border-radius:50%; animation:spin 0.75s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+.err {
+  background:rgba(255,107,107,0.08); border:1px solid rgba(255,107,107,0.28);
+  border-radius:8px; padding:14px 18px; color:#FFAAAA; font-size:0.82rem; line-height:1.6;
+}
+.cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:14px; margin-bottom:22px; }
+.card {
+  background:var(--panel); border:1px solid var(--border);
+  border-radius:10px; padding:18px; backdrop-filter:blur(10px);
+  animation:up 0.35s ease both; transition:transform 0.2s,box-shadow 0.2s;
+}
+.card:hover { transform:translateY(-2px); box-shadow:0 8px 28px rgba(0,0,0,0.35); }
+@keyframes up { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:none} }
+.card-ico { font-size:1.7rem; margin-bottom:8px; }
+.card-lbl { font-size:0.6rem; letter-spacing:2.5px; color:var(--muted); text-transform:uppercase; margin-bottom:5px; }
+.card-val { font-family:'Pixelify Sans',sans-serif; font-size:1.55rem; color:var(--sun); font-weight:700; }
+.card-sub { font-size:0.7rem; color:var(--green); margin-top:4px; }
+.tbl-wrap {
+  background:var(--panel); border:1px solid var(--border);
+  border-radius:10px; overflow:hidden; backdrop-filter:blur(10px);
+  animation:up 0.35s ease both; margin-bottom:20px;
+}
+table { width:100%; border-collapse:collapse; font-size:0.82rem; }
+thead th {
+  background:rgba(255,204,0,0.07); padding:11px 16px; text-align:left;
+  font-size:0.6rem; letter-spacing:2px; color:var(--sun); text-transform:uppercase;
+  border-bottom:1px solid var(--border);
+}
+tbody tr { border-bottom:1px solid rgba(255,255,255,0.04); transition:background 0.12s; }
+tbody tr:hover { background:rgba(255,255,255,0.025); }
+tbody tr:last-child { border-bottom:none; }
+td { padding:10px 16px; }
+td.hi { color:var(--sun); font-weight:500; }
+td.ok { color:#81C784; }
+td.dim { color:var(--muted); font-size:0.75rem; }
+.items { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px; margin-bottom:22px; }
+.item {
+  background:rgba(255,255,255,0.025); border:1px solid var(--border);
+  border-radius:8px; padding:13px 10px; text-align:center;
+  animation:up 0.3s ease both; transition:all 0.18s;
+}
+.item:hover { border-color:rgba(255,204,0,0.4); background:rgba(255,204,0,0.04); transform:translateY(-2px); }
+.item-ico { font-size:1.9rem; margin-bottom:6px; }
+.item-name { font-family:'Pixelify Sans',sans-serif; font-size:0.78rem; color:var(--text); margin-bottom:3px; }
+.item-qty { font-size:0.68rem; color:var(--sun); }
+.sec-title { font-family:'Pixelify Sans',sans-serif; font-size:1rem; color:var(--sun); margin-bottom:14px; }
+.badge {
+  font-size:0.62rem; padding:2px 7px; border-radius:3px; letter-spacing:1px;
+  background:rgba(62,175,90,0.15); border:1px solid rgba(62,175,90,0.3); color:#81C784;
+}
+.badge.gold { background:rgba(255,204,0,0.1); border-color:rgba(255,204,0,0.3); color:var(--sun); }
+.ts { font-size:0.65rem; color:var(--muted); text-align:right; margin-top:14px; letter-spacing:1px; }
+.dot { display:inline-block; width:6px; height:6px; background:var(--green); border-radius:50%; margin-right:5px; animation:blink 2s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+@media(max-width:600px) {
+  .cards { grid-template-columns:repeat(2,1fr); }
+  .tab { padding:7px 10px; font-size:0.8rem; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">
+      <span class="sun-spin">🌻</span>
+      <div class="logo-text">
+        <h1>SFL Dashboard</h1>
+        <p>SUNFLOWER LAND · sfl.world</p>
+      </div>
+    </div>
+    <div class="controls">
+      <label>GRANJA #</label>
+      <input type="number" id="farmId" value="441" min="1">
+      <button class="btn-load" id="btnLoad" onclick="loadAll()">⚡ Cargar</button>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab on"  onclick="tab(this,'granja')">🏡 Granja</button>
+    <button class="tab"     onclick="tab(this,'precios')">💰 Precios</button>
+    <button class="tab"     onclick="tab(this,'exchange')">📈 Exchange</button>
+    <button class="tab"     onclick="tab(this,'subastas')">🔨 Subastas</button>
+  </div>
+
+  <div class="sec on" id="s-granja">  <div class="loading"><div class="ring"></div>Conectando...</div></div>
+  <div class="sec"    id="s-precios"> <div class="loading"><div class="ring"></div>Conectando...</div></div>
+  <div class="sec"    id="s-exchange"><div class="loading"><div class="ring"></div>Conectando...</div></div>
+  <div class="sec"    id="s-subastas"><div class="loading"><div class="ring"></div>Conectando...</div></div>
+</div>
+
+<script>
+function tab(btn, name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  document.querySelectorAll('.sec').forEach(s => s.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('s-' + name).classList.add('on');
+}
+
+function n(v, d = 2) {
+  const f = parseFloat(v);
+  return isNaN(f) ? (v ?? '—') : f.toLocaleString('es-AR', { maximumFractionDigits: d, minimumFractionDigits: 0 });
+}
+
+function ago(ts) {
+  if (!ts) return '—';
+  const ms = Date.now() - new Date(ts).getTime();
+  const m = Math.floor(ms / 60000);
+  if (m < 1)  return 'ahora mismo';
+  if (m < 60) return `hace ${m} min`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `hace ${h}h`;
+  return new Date(ts).toLocaleDateString('es-AR');
+}
+
+function spin(id) {
+  document.getElementById(id).innerHTML = '<div class="loading"><div class="ring"></div>Cargando...</div>';
+}
+
+// Claude como proxy para esquivar CORS
+async function apiFetch(url) {
+  const prompt = `Make a web search or fetch for this exact URL and return ONLY the raw JSON response, no markdown, no explanation, no code fences:\n${url}`;
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+  if (!res.ok) throw new Error(`API error ${res.status}: ${await res.text()}`);
+  const data = await res.json();
+  const text = data.content.filter(b => b.type === 'text').map(b => b.text).join('').trim();
+  const clean = text.replace(/^```[a-z]*\n?/i,'').replace(/```$/,'').trim();
+  try { return JSON.parse(clean); }
+  catch(e) { throw new Error('Respuesta no es JSON válido: ' + clean.substring(0,120)); }
+}
+
+const CROP_ICON = {Sunflower:'🌻',Potato:'🥔',Pumpkin:'🎃',Carrot:'🥕',Cabbage:'🥬',Beetroot:'🟣',Cauliflower:'🥦',Parsnip:'🌿',Radish:'🔴',Wheat:'🌾',Kale:'🥬',Corn:'🌽',Blueberry:'🫐',Orange:'🍊',Apple:'🍎',Banana:'🍌'};
+const RES_ICON  = {Wood:'🪵',Stone:'🪨',Iron:'⚙️',Gold:'🥇',Egg:'🥚',Honey:'🍯',Crimstone:'💎',Oil:'🛢️',Feather:'🪶',Wool:'🧶',Milk:'🥛'};
+
+function getQty(v) {
+  if (typeof v === 'number') return v;
+  if (typeof v === 'string') return parseFloat(v);
+  if (v && typeof v === 'object') return parseFloat(v.amount ?? v.value ?? 0);
+  return 0;
+}
+
+async function loadGranja() {
+  const id = document.getElementById('farmId').value || 441;
+  spin('s-granja');
+  try {
+    const d = await apiFetch(`https://sfl.world/api/v1/land/${id}`);
+    const farm = d.farm || d;
+    const inv  = farm.inventory || {};
+    const bal  = farm.balance ?? farm.tokens ?? '—';
+    const lvl  = farm.level ?? '—';
+    const exp  = farm.expansions ?? farm.expansion ?? '—';
+    const created = farm.createdAt ?? farm.created_at;
+    const sfl  = parseFloat(bal);
+
+    const crops = Object.entries(inv).filter(([k]) => CROP_ICON[k]);
+    const ress  = Object.entries(inv).filter(([k]) => RES_ICON[k]);
+    const rest  = Object.entries(inv).filter(([k]) => !CROP_ICON[k] && !RES_ICON[k]);
+
+    let h = `<div class="cards">
+      <div class="card"><div class="card-ico">💎</div><div class="card-lbl">Balance SFL</div><div class="card-val">${isNaN(sfl)?'—':n(sfl)}</div><div class="card-sub">tokens en granja</div></div>
+      <div class="card"><div class="card-ico">⭐</div><div class="card-lbl">Nivel</div><div class="card-val">${lvl}</div><div class="card-sub">granja #${id}</div></div>
+      <div class="card"><div class="card-ico">🗺️</div><div class="card-lbl">Expansiones</div><div class="card-val">${exp}</div><div class="card-sub">parcelas</div></div>
+      <div class="card"><div class="card-ico">📅</div><div class="card-lbl">Creada</div><div class="card-val" style="font-size:1rem">${created?new Date(created).toLocaleDateString('es-AR'):'—'}</div><div class="card-sub">${ago(created)}</div></div>
+    </div>`;
+
+    if (crops.length) {
+      h += `<div class="sec-title">🌱 Cultivos <span class="badge">${crops.length} tipos</span></div><div class="items">`;
+      crops.forEach(([k,v]) => h += `<div class="item"><div class="item-ico">${CROP_ICON[k]}</div><div class="item-name">${k}</div><div class="item-qty">× ${n(getQty(v),0)}</div></div>`);
+      h += '</div>';
+    }
+    if (ress.length) {
+      h += `<div class="sec-title">⚒️ Recursos <span class="badge">${ress.length} tipos</span></div><div class="items">`;
+      ress.forEach(([k,v]) => h += `<div class="item"><div class="item-ico">${RES_ICON[k]}</div><div class="item-name">${k}</div><div class="item-qty">× ${n(getQty(v),0)}</div></div>`);
+      h += '</div>';
+    }
+    if (!crops.length && !ress.length && rest.length) {
+      h += `<div class="sec-title">📦 Inventario</div><div class="tbl-wrap"><table><thead><tr><th>Ítem</th><th>Cantidad</th></tr></thead><tbody>`;
+      rest.slice(0,30).forEach(([k,v]) => h += `<tr><td class="ok">${k}</td><td class="hi">${n(getQty(v),2)}</td></tr>`);
+      h += '</tbody></table></div>';
+    }
+    h += `<div class="ts"><span class="dot"></span>Actualizado ahora</div>`;
+    document.getElementById('s-granja').innerHTML = h;
+  } catch(e) {
+    document.getElementById('s-granja').innerHTML = `<div class="err">⚠️ No se pudo cargar la granja #${id}.<br><small>${e.message}</small></div>`;
+  }
+}
+
+async function loadPrecios() {
+  spin('s-precios');
+  try {
+    const d = await apiFetch('https://sfl.world/api/v1/prices');
+    const p2p = d.p2p || {};
+    const seq = d.seq || {};
+    const all = [...new Set([...Object.keys(p2p),...Object.keys(seq)])].sort();
+    const upd = d.updatedAt ?? d.updated_at;
+    if (!all.length) {
+      document.getElementById('s-precios').innerHTML = `<div class="err">Sin datos de precios disponibles.</div>`;
+      return;
+    }
+    let h = `<div class="tbl-wrap"><table><thead><tr><th>Ítem</th><th>P2P mín.</th><th>Sequence mín.</th></tr></thead><tbody>`;
+    all.forEach(k => h += `<tr><td class="ok">🌿 ${k}</td><td class="hi">${p2p[k]!=null?n(p2p[k])+' SFL':'—'}</td><td class="hi">${seq[k]!=null?n(seq[k])+' SFL':'—'}</td></tr>`);
+    h += `</tbody></table></div><div class="ts"><span class="dot"></span>Actualizado: ${ago(upd)} · cada 15 min</div>`;
+    document.getElementById('s-precios').innerHTML = h;
+  } catch(e) {
+    document.getElementById('s-precios').innerHTML = `<div class="err">⚠️ Error cargando precios.<br><small>${e.message}</small></div>`;
+  }
+}
+
+async function loadExchange() {
+  spin('s-exchange');
+  try {
+    const d = await apiFetch('https://sfl.world/api/v1.1/exchange');
+    const tokens = [
+      {label:'SFL',        icon:'🌻', data:d.sfl??d.SFL??{}},
+      {label:'POL (Matic)',icon:'💜', data:d.pol??d.POL??d.matic??{}},
+      {label:'Gemas',      icon:'💎', data:d.gems??d.Gems??{}},
+      {label:'Monedas',    icon:'🪙', data:d.coins??d.Coins??{}},
+    ];
+    let h = `<div class="cards">`;
+    tokens.forEach(({label,icon,data:td}) => {
+      const usd    = td.usd??td.USD??td.price??td.value;
+      const change = td.change??td.change24h;
+      const col    = change>0?'#81C784':change<0?'#FF6B6B':'var(--muted)';
+      const arr    = change>0?'▲':change<0?'▼':'';
+      h += `<div class="card"><div class="card-ico">${icon}</div><div class="card-lbl">${label}</div><div class="card-val">$${usd!=null?n(usd,4):'—'}</div>${change!=null?`<div class="card-sub" style="color:${col}">${arr} ${n(Math.abs(change),2)}% 24h</div>`:''}</div>`;
+    });
+    h += '</div>';
+    const hasData = tokens.some(t => t.data.usd??t.data.USD??t.data.price);
+    if (!hasData) {
+      h += `<div class="sec-title" style="margin-top:4px">📊 Datos recibidos</div><div class="tbl-wrap"><table><thead><tr><th>Campo</th><th>Valor</th></tr></thead><tbody>`;
+      Object.entries(d).forEach(([k,v]) => h += `<tr><td class="ok">${k}</td><td class="hi">${typeof v==='object'?JSON.stringify(v):v}</td></tr>`);
+      h += '</tbody></table></div>';
+    }
+    h += `<div class="ts"><span class="dot"></span>Precios actualizados</div>`;
+    document.getElementById('s-exchange').innerHTML = h;
+  } catch(e) {
+    document.getElementById('s-exchange').innerHTML = `<div class="err">⚠️ Error cargando exchange.<br><small>${e.message}</small></div>`;
+  }
+}
+
+async function loadSubastas() {
+  spin('s-subastas');
+  try {
+    const d = await apiFetch('https://sfl.world/api/v1/auctions');
+    const list = Array.isArray(d)?d:d.auctions??Object.values(d);
+    let h = `<div class="sec-title">🔨 Subastas activas <span class="badge gold">${list.length}</span></div>`;
+    if (!list.length) {
+      h += `<div class="card" style="text-align:center;padding:40px"><div style="font-size:2.4rem;margin-bottom:10px">🔨</div><div class="card-lbl">No hay subastas activas</div></div>`;
+    } else {
+      h += `<div class="tbl-wrap"><table><thead><tr><th>Ítem</th><th>Precio</th><th>Cantidad</th><th>Cierra</th></tr></thead><tbody>`;
+      list.slice(0,40).forEach(a => {
+        const name=a.collectible??a.item??a.name??'—';
+        const price=a.sfl??a.price??a.cost??'—';
+        const qty=a.supply??a.quantity??a.tickets??'—';
+        const end=a.endAt??a.end_at??a.endDate;
+        h += `<tr><td class="ok">🏺 ${name}</td><td class="hi">${isNaN(parseFloat(price))?price:n(price)+' SFL'}</td><td>${qty}</td><td class="dim">${ago(end)}</td></tr>`;
+      });
+      h += '</tbody></table></div>';
+    }
+    h += `<div class="ts"><span class="dot"></span>Actualizado ahora</div>`;
+    document.getElementById('s-subastas').innerHTML = h;
+  } catch(e) {
+    document.getElementById('s-subastas').innerHTML = `<div class="err">⚠️ Error cargando subastas.<br><small>${e.message}</small></div>`;
+  }
+}
+
+function loadAll() {
+  document.getElementById('btnLoad').disabled = true;
+  setTimeout(() => document.getElementById('btnLoad').disabled = false, 5000);
+  loadGranja(); loadPrecios(); loadExchange(); loadSubastas();
+}
+loadAll();
+</script>
+</body>
+</html>

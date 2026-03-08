@@ -573,6 +573,33 @@
       z-index:1;
     }
 
+    .btn-clear {
+      font-family: 'Rubik', sans-serif;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--secondary);
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-clear:hover {
+      color: var(--danger);
+      border-color: var(--danger);
+      background: var(--danger-dim);
+    }
+
+    #storage-info {
+      font-size: 0.62rem;
+      color: rgba(182,182,182,0.5);
+      text-align: right;
+      padding: 0 0.5rem;
+    }
+
     @media (max-width: 900px) {
       .top-row { grid-template-columns: 1fr 1fr; }
       .indicators-row { grid-template-columns: repeat(2, 1fr); }
@@ -741,6 +768,55 @@
 
 <script>
 // ───────────────────────────────────────────
+// PERSISTENCIA — localStorage
+// ───────────────────────────────────────────
+const STORAGE_KEY = 'kaspa_advisor_history';
+const MAX_STORED  = 500;  // máximo puntos guardados
+const MAX_POINTS  = 120;  // máximo puntos mostrados en gráfico
+
+function saveHistory() {
+  try {
+    const data = {
+      prices:      state.prices,
+      timestamps:  state.timestamps,
+      sessionHigh: state.sessionHigh,
+      sessionLow:  state.sessionLow,
+      signalLog:   state.signalLog,
+      savedAt:     Date.now(),
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    updateStorageInfo();
+  } catch(e) { console.warn('No se pudo guardar historial:', e); }
+}
+
+function loadHistory() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+    // Descartar datos de más de 7 días
+    const age = Date.now() - (data.savedAt || 0);
+    if (age > 7 * 24 * 60 * 60 * 1000) { localStorage.removeItem(STORAGE_KEY); return false; }
+    state.prices      = Array.isArray(data.prices)     ? data.prices.slice(-MAX_POINTS)     : [];
+    state.timestamps  = Array.isArray(data.timestamps) ? data.timestamps.slice(-MAX_POINTS) : [];
+    state.sessionHigh = data.sessionHigh || null;
+    state.sessionLow  = data.sessionLow  || null;
+    state.signalLog   = Array.isArray(data.signalLog)  ? data.signalLog.slice(-50)          : [];
+    return state.prices.length > 0;
+  } catch(e) { return false; }
+}
+
+function clearHistory() {
+  localStorage.removeItem(STORAGE_KEY);
+  state.prices = []; state.timestamps = [];
+  state.sessionHigh = null; state.sessionLow = null;
+  state.signalLog = [];
+  document.getElementById('log-list').innerHTML = '';
+  updateChart();
+  addLog('HISTORIAL BORRADO', null);
+}
+
+// ───────────────────────────────────────────
 // STATE
 // ───────────────────────────────────────────
 const state = {
@@ -753,9 +829,8 @@ const state = {
   chart: null,
   sessionHigh: null,
   sessionLow: null,
+  signalLog: [],
 };
-
-const MAX_POINTS = 60;
 
 // ───────────────────────────────────────────
 // AUDIO
@@ -1130,8 +1205,11 @@ async function tick() {
   if (!state.sessionHigh || price > state.sessionHigh) state.sessionHigh = price;
   if (!state.sessionLow  || price < state.sessionLow)  state.sessionLow  = price;
 
+  const now = new Date();
+  const ts = now.toLocaleTimeString('es-AR') + ' ' + now.toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit' });
+
   state.prices.push(price);
-  state.timestamps.push(new Date().toLocaleTimeString('es-AR'));
+  state.timestamps.push(ts);
   if (state.prices.length > MAX_POINTS) { state.prices.shift(); state.timestamps.shift(); }
 
   const a = computeSignal(state.prices);
@@ -1145,11 +1223,15 @@ async function tick() {
     showAdvisor(a.signal, price, a);
     addLog(a.signal, price);
     playBeep(a.signal === 'BUY' ? 'buy' : 'sell');
+    state.signalLog.unshift({ signal: a.signal, price, time: ts });
+    if (state.signalLog.length > 50) state.signalLog.pop();
   } else if (a.signal === 'HOLD' && state.lastSignal !== 'HOLD') {
     state.lastSignal = 'HOLD';
     hideAdvisor();
     addLog('HOLD', price);
   }
+
+  saveHistory();
 }
 
 // ───────────────────────────────────────────
@@ -1167,11 +1249,57 @@ function startCountdown() {
 // ───────────────────────────────────────────
 // INIT
 // ───────────────────────────────────────────
+function confirmClear() {
+  if (confirm('¿Borrar todo el historial de precios guardado?')) {
+    clearHistory();
+    updateStorageInfo();
+  }
+}
+
+function updateStorageInfo() {
+  const el = document.getElementById('storage-info');
+  if (!el) return;
+  try {
+    const raw = localStorage.getItem('kaspa_advisor_history');
+    if (!raw) { el.textContent = 'Sin historial'; return; }
+    const data = JSON.parse(raw);
+    const pts = data.prices?.length || 0;
+    const age = Math.round((Date.now() - data.savedAt) / 60000);
+    el.textContent = `${pts} pts · hace ${age < 60 ? age + 'm' : Math.round(age/60) + 'h'}`;
+  } catch(e) { el.textContent = ''; }
+}
+
 async function init() {
   initChart();
-  addLog('INICIO', null);
+
+  const hadHistory = loadHistory();
+
+  if (hadHistory) {
+    // Restaurar historial guardado
+    updateChart();
+    const a = computeSignal(state.prices);
+    const lastPrice = state.prices.at(-1);
+    if (lastPrice) updateDOM(lastPrice, a);
+
+    // Restaurar log de señales
+    state.signalLog.forEach(entry => addLog(entry.signal, entry.price));
+
+    const savedMins = state.prices.length;
+    addLog(`HISTORIAL RESTAURADO (${savedMins} puntos)`, null);
+
+    // Si la última señal guardada no era HOLD, mostrar advisor
+    if (a.signal !== 'HOLD') {
+      state.lastSignal = a.signal;
+      showAdvisor(a.signal, lastPrice, a);
+    }
+  } else {
+    addLog('INICIO', null);
+  }
+
+  // Fetch precio actual inmediatamente
   await tick();
   startCountdown();
+
   state.intervalId = setInterval(async () => {
     state.countdown = 60;
     await tick();

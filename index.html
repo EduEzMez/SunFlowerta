@@ -1,126 +1,1185 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Kaspa Advisor — KAS/USD</title>
+  <link rel="icon" type="image/png" href="Kaspa-Icon-32.png"/>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;900&family=Lato:wght@300;400;700&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #231F20;
+      --bg2: #1a1718;
+      --bg3: #2e2a2b;
+      --primary: #70C7BA;
+      --primary-dim: rgba(112,199,186,0.15);
+      --primary-glow: rgba(112,199,186,0.4);
+      --secondary: #B6B6B6;
+      --danger: #FF6B6B;
+      --danger-dim: rgba(255,107,107,0.15);
+      --success: #70C7BA;
+      --warn: #FFD166;
+      --warn-dim: rgba(255,209,102,0.15);
+      --card: #2a2627;
+      --border: rgba(112,199,186,0.18);
+      --text: #e8e4e5;
+    }
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
-<title>Kaspa Trading Terminal</title>
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Lato', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
 
-<link rel="icon" href="Kaspa-Icon-32.png">
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(112,199,186,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(112,199,186,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
 
-<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@500&family=Lato:wght@300;400&display=swap" rel="stylesheet">
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(35,31,32,0.92);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
 
-<script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+    .logo-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
 
-<link rel="stylesheet" href="style.css">
+    .logo-svg {
+      width: 36px;
+      height: 36px;
+      filter: drop-shadow(0 0 8px var(--primary-glow));
+    }
 
+    .logo-text h1 {
+      font-family: 'Rubik', sans-serif;
+      font-weight: 900;
+      font-size: 1.3rem;
+      letter-spacing: 2px;
+      color: var(--primary);
+      text-transform: uppercase;
+      line-height: 1;
+    }
+
+    .logo-text span {
+      font-size: 0.68rem;
+      color: var(--secondary);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    #live-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.7rem;
+      color: var(--secondary);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .pulse-dot {
+      width: 8px; height: 8px;
+      background: var(--primary);
+      border-radius: 50%;
+      animation: pulseAnim 1.5s infinite;
+    }
+
+    @keyframes pulseAnim {
+      0%,100% { opacity:1; box-shadow: 0 0 0 0 var(--primary-glow); }
+      50% { opacity:0.6; box-shadow: 0 0 0 5px transparent; }
+    }
+
+    #countdown {
+      font-family: 'Rubik', sans-serif;
+      font-size: 0.8rem;
+      color: var(--primary);
+      font-weight: 600;
+      background: var(--primary-dim);
+      border: 1px solid var(--border);
+      padding: 4px 12px;
+      border-radius: 20px;
+    }
+
+    main {
+      position: relative;
+      z-index: 1;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1.5rem 1.5rem 4rem;
+      display: grid;
+      gap: 1.2rem;
+    }
+
+    .top-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.2rem 1.4rem;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(112,199,186,0.08);
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--primary), transparent);
+    }
+
+    .stat-label {
+      font-size: 0.68rem;
+      color: var(--secondary);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .stat-value {
+      font-family: 'Rubik', sans-serif;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--primary);
+      line-height: 1;
+    }
+
+    .stat-sub {
+      font-size: 0.7rem;
+      color: var(--secondary);
+      margin-top: 5px;
+    }
+
+    .small-stat .stat-value { font-size: 1.3rem; }
+
+    .signal-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.2rem 1.4rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .signal-label {
+      font-size: 0.68rem;
+      color: var(--secondary);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    #signal-box {
+      font-family: 'Rubik', sans-serif;
+      font-size: 1.9rem;
+      font-weight: 900;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      transition: all 0.4s;
+    }
+
+    #signal-box.BUY  { color: var(--success); text-shadow: 0 0 24px var(--primary-glow); }
+    #signal-box.SELL { color: var(--danger);  text-shadow: 0 0 24px rgba(255,107,107,0.6); }
+    #signal-box.HOLD { color: var(--warn);    text-shadow: 0 0 18px rgba(255,209,102,0.4); }
+
+    .chart-wrap {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 1.4rem 1.5rem;
+    }
+
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .chart-title {
+      font-family: 'Rubik', sans-serif;
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--text);
+    }
+
+    .chart-legend {
+      display: flex;
+      gap: 14px;
+      font-size: 0.68rem;
+      color: var(--secondary);
+    }
+
+    .legend-dot {
+      display: inline-block;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      margin-right: 4px;
+    }
+
+    #priceChart { max-height: 300px; }
+
+    .indicators-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+    }
+
+    .ind-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.2rem;
+    }
+
+    .ind-title {
+      font-family: 'Rubik', sans-serif;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--secondary);
+      margin-bottom: 8px;
+    }
+
+    .ind-value {
+      font-family: 'Rubik', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    .ind-bar-wrap {
+      margin-top: 8px;
+      background: var(--bg3);
+      border-radius: 4px;
+      height: 4px;
+      overflow: hidden;
+    }
+
+    .ind-bar {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.6s ease;
+    }
+
+    .ind-desc {
+      font-size: 0.68rem;
+      color: var(--secondary);
+      margin-top: 5px;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .fib-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.4rem;
+    }
+
+    .section-title {
+      font-family: 'Rubik', sans-serif;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--secondary);
+      margin-bottom: 12px;
+    }
+
+    .fib-levels { display: flex; flex-direction: column; gap: 7px; }
+
+    .fib-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.78rem;
+    }
+
+    .fib-pct {
+      width: 42px;
+      color: var(--primary);
+      font-family: 'Rubik', sans-serif;
+      font-weight: 600;
+      font-size: 0.7rem;
+    }
+
+    .fib-bar-wrap {
+      flex: 1;
+      background: var(--bg3);
+      border-radius: 3px;
+      height: 4px;
+    }
+
+    .fib-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), transparent);
+      border-radius: 3px;
+    }
+
+    .fib-price {
+      width: 88px;
+      text-align: right;
+      font-family: 'Rubik', sans-serif;
+      font-size: 0.76rem;
+      color: var(--text);
+    }
+
+    .fib-now-marker {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--warn);
+      box-shadow: 0 0 6px var(--warn);
+      flex-shrink: 0;
+    }
+
+    /* ADVISOR */
+    #advisor-panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 1.8rem 2rem;
+      position: relative;
+      overflow: hidden;
+      display: none;
+    }
+
+    #advisor-panel.show { display: block; animation: fadeSlideUp 0.5s ease; }
+
+    @keyframes fadeSlideUp {
+      from { opacity:0; transform: translateY(16px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+
+    #advisor-panel::before {
+      content:'';
+      position:absolute;
+      top:0;left:0;right:0;
+      height:3px;
+    }
+
+    #advisor-panel.buy-panel::before  { background: linear-gradient(90deg, transparent, var(--primary), transparent); }
+    #advisor-panel.sell-panel::before { background: linear-gradient(90deg, transparent, var(--danger), transparent); }
+
+    .advisor-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 1.2rem;
+    }
+
+    .advisor-icon {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      flex-shrink: 0;
+    }
+
+    .advisor-icon.buy  { background: var(--primary-dim); border: 1px solid var(--primary); }
+    .advisor-icon.sell { background: var(--danger-dim);  border: 1px solid var(--danger); }
+
+    .advisor-name {
+      font-family: 'Rubik', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--text);
+    }
+
+    .advisor-role {
+      font-size: 0.7rem;
+      color: var(--secondary);
+    }
+
+    .advisor-body {
+      font-size: 0.88rem;
+      line-height: 1.75;
+      color: var(--secondary);
+      margin-bottom: 1.4rem;
+    }
+
+    .advisor-body strong { color: var(--text); }
+
+    .advice-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+    }
+
+    .advice-box {
+      background: var(--bg3);
+      border-radius: 12px;
+      padding: 1rem 1.1rem;
+      border: 1px solid var(--border);
+    }
+
+    .advice-box-label {
+      font-size: 0.64rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--secondary);
+      margin-bottom: 4px;
+    }
+
+    .advice-box-value {
+      font-family: 'Rubik', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .advice-box-value.green { color: var(--primary); }
+    .advice-box-value.red   { color: var(--danger); }
+    .advice-box-value.warn  { color: var(--warn); }
+
+    .advice-box-note {
+      font-size: 0.66rem;
+      color: var(--secondary);
+      margin-top: 3px;
+      line-height: 1.3;
+    }
+
+    /* BOTTOM */
+    .bottom-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .log-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.4rem;
+    }
+
+    #log-list {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      max-height: 180px;
+      overflow-y: auto;
+    }
+
+    #log-list::-webkit-scrollbar { width: 3px; }
+    #log-list::-webkit-scrollbar-track { background: var(--bg3); }
+    #log-list::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 3px; }
+
+    .log-entry {
+      display: flex;
+      gap: 10px;
+      font-size: 0.76rem;
+      padding: 5px 10px;
+      border-radius: 7px;
+      background: var(--bg3);
+    }
+
+    .log-time { color: var(--secondary); flex-shrink:0; font-family:'Rubik',sans-serif; font-size:0.7rem; }
+    .log-entry.buy  .log-text { color: var(--primary); font-weight:700; }
+    .log-entry.sell .log-text { color: var(--danger);  font-weight:700; }
+    .log-entry.hold .log-text { color: var(--warn); }
+    .log-entry.inicio .log-text { color: var(--secondary); }
+
+    /* TOAST */
+    #toast {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      z-index: 9999;
+      background: var(--card);
+      border: 1px solid var(--primary);
+      border-radius: 14px;
+      padding: 1rem 1.3rem;
+      min-width: 260px;
+      max-width: 340px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.6), 0 0 20px var(--primary-glow);
+      transform: translateX(130%);
+      transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    #toast.show { transform: translateX(0); }
+    #toast.sell-toast { border-color: var(--danger); box-shadow: 0 8px 40px rgba(0,0,0,0.6), 0 0 20px rgba(255,107,107,0.3); }
+
+    .toast-icon { font-size: 1.5rem; flex-shrink:0; margin-top:2px; }
+    .toast-title {
+      font-family:'Rubik',sans-serif;
+      font-weight:700;
+      font-size:0.88rem;
+      color:var(--text);
+      margin-bottom:3px;
+    }
+    .toast-msg { font-size:0.75rem; color:var(--secondary); line-height:1.4; }
+
+    footer {
+      text-align:center;
+      padding:1.5rem;
+      font-size:0.66rem;
+      color:rgba(182,182,182,0.35);
+      letter-spacing:1px;
+      position:relative;
+      z-index:1;
+    }
+
+    @media (max-width: 900px) {
+      .top-row { grid-template-columns: 1fr 1fr; }
+      .indicators-row { grid-template-columns: repeat(2, 1fr); }
+      .advice-grid { grid-template-columns: repeat(2, 1fr); }
+      .bottom-row { grid-template-columns: 1fr; }
+      .two-col { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 600px) {
+      .top-row { grid-template-columns: 1fr; }
+      .indicators-row { grid-template-columns: 1fr 1fr; }
+      header { padding: 0 1rem; }
+      main { padding: 1rem 1rem 3rem; }
+    }
+  </style>
 </head>
-
 <body>
 
 <header>
-
-<img src="logo.svg" class="logo">
-
-<h1>Kaspa Trading Terminal</h1>
-
-<button id="refreshBtn">Actualizar</button>
-
+  <div class="logo-wrap">
+    <svg class="logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 197.05 196.86">
+      <circle fill="#1a1a1a" cx="98.52" cy="98.43" r="41.03"/>
+      <path fill="#6fc7ba" d="m149.42,76.34c-2.8-6.76-7.22-13.03-12.32-18.12-5.08-5.1-11.61-8.91-18.38-11.71-6.51-2.71-13.78-4.07-21.28-4.07s-15.21.27-21.72,2.98c-6.76,2.8-12.42,8.12-17.51,13.22-5.1,5.1-11.02,10.51-13.82,17.26-2.71,6.53-1.83,14.48-1.83,21.99s.55,14.85,3.26,21.38c2.8,6.76,8.52,11.54,13.6,16.64,5.1,5.1,9.71,11.18,16.47,13.98,6.53,2.71,14.04,4.55,21.54,4.55s14.87-2.22,21.4-4.94c6.75-2.8,12.86-7.18,17.96-12.27,5.1-5.1,9.19-11.32,12.01-18.08,2.7-6.51,5.79-13.76,5.79-21.26s-2.48-15-5.19-21.53Zm-36.26,53.49l-11.88-1.75,3.39-23-24.87,19.16-7.32-9.56,21.82-16.8-21.82-16.81,7.32-9.56,24.87,19.16-3.39-22.99,11.88-1.77,4.73,31.98-4.73,31.96Z"/>
+    </svg>
+    <div class="logo-text">
+      <h1>Kaspa Advisor</h1>
+      <span>KAS / USD · Análisis Técnico en Vivo</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <div id="live-badge"><span class="pulse-dot"></span> En Vivo</div>
+    <div id="countdown">60s</div>
+  </div>
 </header>
 
+<main>
 
-<!-- API STATUS -->
-<div class="card">
+  <!-- TOP ROW -->
+  <div class="top-row">
+    <div class="stat-card">
+      <div class="stat-label">Precio Actual KAS / USD</div>
+      <div class="stat-value" id="price-display">—</div>
+      <div class="stat-sub" id="price-change">Conectando con la API...</div>
+    </div>
 
-<h3>API Source</h3>
+    <div class="stat-card small-stat">
+      <div class="stat-label">Máximo sesión</div>
+      <div class="stat-value" id="high-display">—</div>
+      <div class="stat-sub">↑ Resistencia inmediata</div>
+    </div>
 
-<div id="apiSource">Detectando...</div>
+    <div class="stat-card small-stat">
+      <div class="stat-label">Mínimo sesión</div>
+      <div class="stat-value" id="low-display" style="color:var(--danger)">—</div>
+      <div class="stat-sub">↓ Soporte inmediato</div>
+    </div>
 
+    <div class="signal-card">
+      <div class="signal-label">Señal Técnica</div>
+      <div id="signal-box" class="HOLD">HOLD</div>
+      <div class="stat-sub" id="signal-reason" style="text-align:center;max-width:140px">Recopilando datos...</div>
+    </div>
+  </div>
+
+  <!-- CHART -->
+  <div class="chart-wrap">
+    <div class="chart-header">
+      <span class="chart-title">Evolución del Precio · KAS/USD</span>
+      <div class="chart-legend">
+        <span><span class="legend-dot" style="background:#70C7BA"></span>Precio</span>
+        <span><span class="legend-dot" style="background:#FFD166"></span>EMA 9</span>
+        <span><span class="legend-dot" style="background:#FF6B6B"></span>EMA 21</span>
+      </div>
+    </div>
+    <canvas id="priceChart"></canvas>
+  </div>
+
+  <!-- INDICATORS -->
+  <div class="indicators-row">
+    <div class="ind-card">
+      <div class="ind-title">RSI (14)</div>
+      <div class="ind-value" id="rsi-val" style="color:var(--primary)">—</div>
+      <div class="ind-bar-wrap"><div class="ind-bar" id="rsi-bar" style="width:50%;background:var(--primary)"></div></div>
+      <div class="ind-desc" id="rsi-desc">Calculando...</div>
+    </div>
+
+    <div class="ind-card">
+      <div class="ind-title">ATR · Volatilidad</div>
+      <div class="ind-value" id="atr-val" style="color:var(--warn)">—</div>
+      <div class="ind-bar-wrap"><div class="ind-bar" id="atr-bar" style="width:0%;background:var(--warn)"></div></div>
+      <div class="ind-desc" id="atr-desc">Average True Range (14)</div>
+    </div>
+
+    <div class="ind-card">
+      <div class="ind-title">EMA 9 / EMA 21</div>
+      <div class="ind-value" id="ema-val" style="color:var(--secondary)">—</div>
+      <div class="ind-bar-wrap"><div class="ind-bar" id="ema-bar" style="width:50%;background:var(--secondary)"></div></div>
+      <div class="ind-desc" id="ema-desc">Cruce de medias móviles</div>
+    </div>
+
+    <div class="ind-card">
+      <div class="ind-title">Momentum</div>
+      <div class="ind-value" id="mom-val" style="color:var(--secondary)">—</div>
+      <div class="ind-bar-wrap"><div class="ind-bar" id="mom-bar" style="width:50%;background:var(--secondary)"></div></div>
+      <div class="ind-desc" id="mom-desc">Últimas 9 velas</div>
+    </div>
+  </div>
+
+  <!-- FIB + ZONES -->
+  <div class="two-col">
+    <div class="fib-card">
+      <div class="section-title">Niveles de Fibonacci · Retroceso</div>
+      <div class="fib-levels" id="fib-levels">
+        <div style="color:var(--secondary);font-size:0.78rem">Recopilando rango de precios...</div>
+      </div>
+    </div>
+
+    <div class="fib-card">
+      <div class="section-title">Zonas de Acción Recomendadas</div>
+      <div id="action-zones" style="display:flex;flex-direction:column;gap:8px">
+        <div style="color:var(--secondary);font-size:0.78rem">Esperando datos suficientes...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADVISOR PANEL -->
+  <div id="advisor-panel">
+    <div class="advisor-header">
+      <div class="advisor-icon" id="advisor-icon">🤖</div>
+      <div>
+        <div class="advisor-name">KAS Advisor · Asesor de Criptomonedas</div>
+        <div class="advisor-role">Análisis técnico basado en RSI · EMA · ATR · Fibonacci</div>
+      </div>
+    </div>
+    <div class="advisor-body" id="advisor-text"></div>
+    <div class="advice-grid" id="advice-grid"></div>
+  </div>
+
+  <!-- BOTTOM -->
+  <div class="bottom-row">
+    <div class="log-card">
+      <div class="section-title">Historial de Señales</div>
+      <div id="log-list"></div>
+    </div>
+
+    <div class="fib-card">
+      <div class="section-title">Resumen de Indicadores</div>
+      <div id="summary-panel" style="display:flex;flex-direction:column;gap:8px;font-size:0.82rem">
+        <div style="color:var(--secondary);font-size:0.78rem">Actualizando...</div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer>Kaspa Advisor — Uso educativo exclusivamente. No constituye asesoramiento financiero profesional. Invertir en criptomonedas conlleva riesgos.</footer>
+
+<!-- TOAST -->
+<div id="toast">
+  <div class="toast-icon" id="toast-icon">📊</div>
+  <div class="toast-content">
+    <div class="toast-title" id="toast-title">Señal detectada</div>
+    <div class="toast-msg" id="toast-msg"></div>
+  </div>
 </div>
 
+<script>
+// ───────────────────────────────────────────
+// STATE
+// ───────────────────────────────────────────
+const state = {
+  prices: [],
+  timestamps: [],
+  lastSignal: null,
+  countdown: 60,
+  intervalId: null,
+  countdownId: null,
+  chart: null,
+  sessionHigh: null,
+  sessionLow: null,
+};
 
-<!-- DASHBOARD -->
-<div class="dashboard">
+const MAX_POINTS = 60;
 
-<div class="card">
+// ───────────────────────────────────────────
+// AUDIO
+// ───────────────────────────────────────────
+function playBeep(type) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = type === 'buy' ? 880 : 440;
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.6);
+  } catch(e) {}
+}
 
-<h3>Precio</h3>
+// ───────────────────────────────────────────
+// API
+// ───────────────────────────────────────────
+async function fetchPrice() {
+  try {
+    const res = await fetch('https://api.kaspa.org/info/price?stringOnly=true');
+    const text = await res.text();
+    const n = parseFloat(text.trim());
+    return isNaN(n) ? null : n;
+  } catch(e) { return null; }
+}
 
-<div id="price">$0</div>
+// ───────────────────────────────────────────
+// INDICATORS
+// ───────────────────────────────────────────
+function calcEMA(arr, period) {
+  if (arr.length < period) return null;
+  const k = 2 / (period + 1);
+  let ema = arr.slice(0, period).reduce((a,b) => a+b, 0) / period;
+  for (let i = period; i < arr.length; i++) ema = arr[i]*k + ema*(1-k);
+  return ema;
+}
 
-</div>
+function calcRSI(arr, period = 14) {
+  if (arr.length < period + 1) return null;
+  const changes = arr.slice(1).map((v,i) => v - arr[i]);
+  const recent = changes.slice(-period);
+  const gains = recent.filter(c=>c>0).reduce((a,b)=>a+b,0) / period;
+  const losses = Math.abs(recent.filter(c=>c<0).reduce((a,b)=>a+b,0)) / period;
+  if (losses === 0) return 100;
+  return 100 - 100 / (1 + gains/losses);
+}
 
-<div class="card">
+function calcATR(arr, period = 14) {
+  if (arr.length < period + 1) return null;
+  const trs = arr.slice(1).map((v,i) => Math.abs(v - arr[i]));
+  return trs.slice(-period).reduce((a,b)=>a+b,0) / period;
+}
 
-<h3>Volumen 24h</h3>
+function calcFib(high, low) {
+  const d = high - low;
+  return {
+    '0%':    high,
+    '23.6%': high - d*0.236,
+    '38.2%': high - d*0.382,
+    '50%':   high - d*0.500,
+    '61.8%': high - d*0.618,
+    '78.6%': high - d*0.786,
+    '100%':  low,
+  };
+}
 
-<div id="volume">-</div>
+// ───────────────────────────────────────────
+// SIGNAL ENGINE
+// ───────────────────────────────────────────
+function computeSignal(prices) {
+  if (prices.length < 22) return { signal:'HOLD', reason:`Recopilando datos (${prices.length}/22)...`, score:0 };
 
-</div>
+  const rsi   = calcRSI(prices);
+  const ema9  = calcEMA(prices, 9);
+  const ema21 = calcEMA(prices, 21);
+  const atr   = calcATR(prices);
+  const price = prices.at(-1);
 
-<div class="card">
+  let score = 0;
+  const reasons = [];
 
-<h3>Market Cap</h3>
+  if (rsi < 35)      { score += 2; reasons.push(`RSI sobrevendido (${rsi.toFixed(1)})`); }
+  else if (rsi < 45) { score += 1; reasons.push(`RSI bajo (${rsi.toFixed(1)})`); }
+  else if (rsi > 65) { score -= 2; reasons.push(`RSI sobrecomprado (${rsi.toFixed(1)})`); }
+  else if (rsi > 55) { score -= 1; reasons.push(`RSI alto (${rsi.toFixed(1)})`); }
 
-<div id="marketcap">-</div>
+  if (ema9 > ema21) { score += 2; reasons.push('EMA9>EMA21 alcista'); }
+  else              { score -= 2; reasons.push('EMA9<EMA21 bajista'); }
 
-</div>
+  const mom5 = prices.slice(-5);
+  const rising = mom5.filter((v,i)=>i>0&&v>mom5[i-1]).length;
+  if (rising >= 4) { score += 1; reasons.push('Momentum alcista'); }
+  else if (rising <= 1) { score -= 1; reasons.push('Momentum bajista'); }
 
-<div class="card">
+  const atrPct = atr ? atr/price*100 : 0;
+  if (atrPct > 1.5) reasons.push(`Alta volatilidad (${atrPct.toFixed(2)}%)`);
 
-<h3>Tendencia</h3>
+  let signal;
+  if (score >= 3)       signal = 'BUY';
+  else if (score <= -3) signal = 'SELL';
+  else                  signal = 'HOLD';
 
-<div id="trend">-</div>
+  return { signal, reason: reasons.join(' · '), score, rsi, ema9, ema21, atr, atrPct };
+}
 
-</div>
+// ───────────────────────────────────────────
+// ADVISOR CONTENT
+// ───────────────────────────────────────────
+function generateAdvice(signal, price, a) {
+  const atrN = a.atr || price*0.01;
+  const fib = state.sessionHigh && state.sessionLow ? calcFib(state.sessionHigh, state.sessionLow) : null;
 
-<div class="card">
+  if (signal === 'BUY') {
+    const entry   = price;
+    const sl      = +(price - atrN*1.5).toFixed(6);
+    const t1      = fib ? +fib['23.6%'].toFixed(6) : +(price*1.04).toFixed(6);
+    const t2      = fib ? +fib['0%'].toFixed(6)    : +(price*1.08).toFixed(6);
+    return {
+      text: `El análisis técnico señala <strong>condiciones favorables para comprar</strong>. El RSI en <strong>${a.rsi?.toFixed(1)}</strong> indica zona de sobreventa y la EMA9 converge sobre la EMA21, anticipando un posible movimiento alcista. El ATR de <strong>$${atrN.toFixed(6)}</strong> sugiere que el mercado tiene espacio para expandirse. Recomiendo entrar con una orden limitada en el precio actual, definir un stop-loss disciplinado bajo el soporte ATR, y tomar ganancias escalonadas en los niveles de resistencia Fibonacci.`,
+      boxes: [
+        { label:'Precio de Entrada',      value:`$${entry}`,  cls:'green', note:'Orden de compra recomendada' },
+        { label:'Stop Loss',              value:`$${sl}`,     cls:'red',   note:'ATR ×1.5 — riesgo controlado' },
+        { label:'Target 1 (Fib 23.6%)',   value:`$${t1}`,     cls:'green', note:'Primera resistencia Fibonacci' },
+        { label:'Target Final (Fib 0%)',  value:`$${t2}`,     cls:'warn',  note:'Máximo del rango — cerrar posición' },
+      ]
+    };
+  } else {
+    const entry   = price;
+    const sl      = +(price + atrN*1.5).toFixed(6);
+    const rb1     = fib ? +fib['61.8%'].toFixed(6) : +(price*0.95).toFixed(6);
+    const rb2     = fib ? +fib['100%'].toFixed(6)  : +(price*0.92).toFixed(6);
+    return {
+      text: `El análisis técnico indica <strong>condiciones de venta / toma de ganancias</strong>. El RSI en <strong>${a.rsi?.toFixed(1)}</strong> refleja sobrecompra y la EMA9 diverge de la EMA21, señalando agotamiento del impulso alcista. El precio se aproxima a resistencias Fibonacci clave. Recomiendo liquidar la posición en el precio actual y aguardar una corrección para re-ingresar en los soportes Fibonacci del 61.8% o 100%.`,
+      boxes: [
+        { label:'Precio de Venta',          value:`$${entry}`,  cls:'red',   note:'Orden de venta recomendada' },
+        { label:'Stop Loss (corta)',         value:`$${sl}`,     cls:'red',   note:'ATR ×1.5 sobre precio actual' },
+        { label:'Recompra 1 (Fib 61.8%)',   value:`$${rb1}`,    cls:'green', note:'Soporte Fibonacci principal' },
+        { label:'Recompra 2 (Fib 100%)',    value:`$${rb2}`,    cls:'warn',  note:'Soporte máximo — acumulación' },
+      ]
+    };
+  }
+}
 
-<h3>RSI</h3>
+// ───────────────────────────────────────────
+// DOM
+// ───────────────────────────────────────────
+const fmt = n => n != null ? `$${parseFloat(n).toFixed(6)}` : '—';
 
-<div id="rsi">-</div>
+function updateDOM(price, a) {
+  const prev = state.prices.length > 1 ? state.prices.at(-2) : price;
+  const diff = price - prev;
+  const pct  = ((diff/prev)*100).toFixed(3);
 
-</div>
+  document.getElementById('price-display').textContent = fmt(price);
+  const ch = document.getElementById('price-change');
+  ch.textContent = `${diff>=0?'▲':'▼'} ${diff>=0?'+':''}${pct}% desde última lectura`;
+  ch.style.color = diff >= 0 ? 'var(--primary)' : 'var(--danger)';
 
-<div class="card">
+  document.getElementById('high-display').textContent = fmt(state.sessionHigh);
+  document.getElementById('low-display').textContent  = fmt(state.sessionLow);
 
-<h3>MACD</h3>
+  const sig = document.getElementById('signal-box');
+  sig.textContent = a.signal;
+  sig.className = a.signal;
+  document.getElementById('signal-reason').textContent = a.reason;
 
-<div id="macd">-</div>
+  // RSI
+  if (a.rsi != null) {
+    document.getElementById('rsi-val').textContent = a.rsi.toFixed(1);
+    document.getElementById('rsi-bar').style.width = `${a.rsi}%`;
+    document.getElementById('rsi-bar').style.background =
+      a.rsi < 35 ? 'var(--primary)' : a.rsi > 65 ? 'var(--danger)' : 'var(--warn)';
+    document.getElementById('rsi-desc').textContent =
+      a.rsi < 35 ? '⚡ Sobrevendido — posible rebote' :
+      a.rsi > 65 ? '⚠️ Sobrecomprado — posible corrección' :
+                   '→ Zona neutra (35–65)';
+  }
 
-</div>
+  // ATR
+  if (a.atr != null) {
+    document.getElementById('atr-val').textContent = `$${a.atr.toFixed(6)}`;
+    document.getElementById('atr-bar').style.width = `${Math.min(a.atrPct*20, 100)}%`;
+    document.getElementById('atr-desc').textContent =
+      a.atrPct > 2 ? '🔴 Alta volatilidad — precaución' :
+      a.atrPct > 1 ? '🟡 Volatilidad moderada' :
+                     '🟢 Baja volatilidad — mercado estable';
+  }
 
-</div>
+  // EMA
+  if (a.ema9 && a.ema21) {
+    const spread = ((a.ema9 - a.ema21) / a.ema21 * 100);
+    document.getElementById('ema-val').textContent = `${spread>0?'+':''}${spread.toFixed(3)}%`;
+    document.getElementById('ema-bar').style.width = `${Math.min(Math.abs(spread)*10+50,100)}%`;
+    document.getElementById('ema-bar').style.background = spread > 0 ? 'var(--primary)' : 'var(--danger)';
+    document.getElementById('ema-desc').textContent =
+      spread > 0 ? '↑ EMA9 sobre EMA21 — tendencia alcista' : '↓ EMA9 bajo EMA21 — tendencia bajista';
+  }
 
+  // Momentum
+  const mom = state.prices.slice(-9);
+  const r = mom.filter((v,i)=>i>0&&v>mom[i-1]).length;
+  document.getElementById('mom-val').textContent = `${r}/8`;
+  document.getElementById('mom-bar').style.width = `${(r/8)*100}%`;
+  document.getElementById('mom-bar').style.background = r>=6?'var(--primary)':r<=2?'var(--danger)':'var(--warn)';
+  document.getElementById('mom-desc').textContent = r>=6?'↑ Tendencia alcista':r<=2?'↓ Tendencia bajista':'→ Neutral';
 
-<!-- CHART -->
-<div id="chart"></div>
+  // Fibonacci
+  const fibEl = document.getElementById('fib-levels');
+  if (state.sessionHigh && state.sessionLow && state.sessionHigh !== state.sessionLow) {
+    const levels = calcFib(state.sessionHigh, state.sessionLow);
+    fibEl.innerHTML = '';
+    Object.entries(levels).forEach(([pct, val]) => {
+      const near = Math.abs(val - price)/price < 0.006;
+      const row = document.createElement('div');
+      row.className = 'fib-row';
+      row.innerHTML = `
+        <span class="fib-pct">${pct}</span>
+        <div class="fib-bar-wrap"><div class="fib-fill" style="width:${100-parseFloat(pct)}%"></div></div>
+        ${near ? '<span class="fib-now-marker"></span>' : '<span style="width:8px;display:inline-block"></span>'}
+        <span class="fib-price" style="${near?'color:var(--warn);font-weight:700':''}">$${val.toFixed(6)}</span>`;
+      fibEl.appendChild(row);
+    });
+  }
 
+  // Action zones
+  const az = document.getElementById('action-zones');
+  if (state.sessionHigh && a.atr) {
+    const levels = calcFib(state.sessionHigh, state.sessionLow);
+    az.innerHTML = [
+      { icon:'🔴', label:'Venta Fuerte',   price: levels['0%'],    note:'Resistencia máxima Fib 0%' },
+      { icon:'🟡', label:'Toma Parcial',   price: levels['23.6%'], note:'Primera resistencia Fib 23.6%' },
+      { icon:'🟢', label:'Zona Compra',    price: levels['61.8%'], note:'Soporte Fibonacci 61.8%' },
+      { icon:'🟢', label:'Compra Fuerte',  price: levels['100%'],  note:'Soporte máximo Fib 100%' },
+    ].map(z => `
+      <div style="background:var(--bg3);padding:7px 12px;border-radius:8px;border:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:0.72rem;color:var(--text)">${z.icon} ${z.label}</div>
+          <div style="font-size:0.64rem;color:var(--secondary)">${z.note}</div>
+        </div>
+        <div style="font-family:'Rubik',sans-serif;font-size:0.95rem;font-weight:700;color:var(--primary)">$${z.price.toFixed(6)}</div>
+      </div>`).join('');
+  }
 
-<!-- SIGNALS -->
-<div class="signals">
+  // Summary
+  const sp = document.getElementById('summary-panel');
+  sp.innerHTML = [
+    { label:'Score técnico', val:`${a.score > 0?'+':''}${a.score || 0} puntos`, col: a.score>0?'var(--primary)':a.score<0?'var(--danger)':'var(--warn)' },
+    { label:'Muestras',      val:`${state.prices.length}/${MAX_POINTS}`, col:'var(--secondary)' },
+    { label:'Rango sesión',  val: state.sessionHigh ? `$${(state.sessionHigh-state.sessionLow).toFixed(6)}` : '—', col:'var(--secondary)' },
+  ].map(s => `
+    <div style="background:var(--bg3);padding:8px 12px;border-radius:8px;border:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:0.72rem;color:var(--secondary)">${s.label}</span>
+      <span style="font-family:'Rubik',sans-serif;font-weight:700;color:${s.col};font-size:0.88rem">${s.val}</span>
+    </div>`).join('');
+}
 
-<h2>Trading Signal</h2>
+// ───────────────────────────────────────────
+// ADVISOR PANEL
+// ───────────────────────────────────────────
+function showAdvisor(signal, price, a) {
+  const panel = document.getElementById('advisor-panel');
+  const advice = generateAdvice(signal, price, a);
+  panel.className = `show ${signal==='BUY'?'buy':'sell'}-panel`;
+  const iconEl = document.getElementById('advisor-icon');
+  iconEl.className = `advisor-icon ${signal.toLowerCase()}`;
+  iconEl.textContent = signal === 'BUY' ? '📈' : '📉';
+  document.getElementById('advisor-text').innerHTML = advice.text;
+  const grid = document.getElementById('advice-grid');
+  grid.innerHTML = advice.boxes.map(b=>`
+    <div class="advice-box">
+      <div class="advice-box-label">${b.label}</div>
+      <div class="advice-box-value ${b.cls}">${b.value}</div>
+      <div class="advice-box-note">${b.note}</div>
+    </div>`).join('');
+}
 
-<div id="signalBox">Esperando datos...</div>
+function hideAdvisor() {
+  document.getElementById('advisor-panel').className = '';
+}
 
-<div id="advisor"></div>
+// ───────────────────────────────────────────
+// TOAST
+// ───────────────────────────────────────────
+function showToast(signal, price) {
+  const t = document.getElementById('toast');
+  const buy = signal === 'BUY';
+  t.className = buy ? 'show' : 'show sell-toast';
+  document.getElementById('toast-icon').textContent = buy ? '🟢' : '🔴';
+  document.getElementById('toast-title').textContent = buy ? '⚡ SEÑAL DE COMPRA' : '⚠️ SEÑAL DE VENTA';
+  document.getElementById('toast-msg').textContent =
+    buy ? `Precio: $${price.toFixed(6)} — Condiciones de acumulación detectadas.`
+        : `Precio: $${price.toFixed(6)} — Posible distribución o corrección.`;
+  setTimeout(() => { t.className = ''; }, 7000);
+}
 
-</div>
+// ───────────────────────────────────────────
+// LOG
+// ───────────────────────────────────────────
+function addLog(signal, price) {
+  const list = document.getElementById('log-list');
+  const time = new Date().toLocaleTimeString('es-AR');
+  const entry = document.createElement('div');
+  entry.className = `log-entry ${signal.toLowerCase()}`;
+  const priceStr = price ? ` @ $${parseFloat(price).toFixed(6)}` : '';
+  entry.innerHTML = `<span class="log-time">${time}</span><span class="log-text">${signal}${priceStr}</span>`;
+  list.insertBefore(entry, list.firstChild);
+  while (list.children.length > 25) list.removeChild(list.lastChild);
+}
 
+// ───────────────────────────────────────────
+// CHART
+// ───────────────────────────────────────────
+function initChart() {
+  const ctx = document.getElementById('priceChart').getContext('2d');
+  state.chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [
+        { label:'KAS/USD', data:[], borderColor:'#70C7BA', backgroundColor:'rgba(112,199,186,0.07)',
+          borderWidth:2, pointRadius:2, pointBackgroundColor:'#70C7BA', tension:0.4, fill:true },
+        { label:'EMA 9',  data:[], borderColor:'#FFD166', borderWidth:1.5, pointRadius:0,
+          tension:0.4, fill:false, borderDash:[4,3] },
+        { label:'EMA 21', data:[], borderColor:'#FF6B6B', borderWidth:1.5, pointRadius:0,
+          tension:0.4, fill:false, borderDash:[6,4] },
+      ]
+    },
+    options: {
+      responsive: true,
+      interaction: { mode:'index', intersect:false },
+      plugins: {
+        legend: { display:false },
+        tooltip: {
+          backgroundColor:'#2a2627', titleColor:'#70C7BA', bodyColor:'#B6B6B6',
+          borderColor:'rgba(112,199,186,0.2)', borderWidth:1,
+          callbacks: { label: c => ` ${c.dataset.label}: $${c.parsed.y?.toFixed(6)}` }
+        }
+      },
+      scales: {
+        x: { grid:{ color:'rgba(112,199,186,0.04)' }, ticks:{ color:'#B6B6B6', maxTicksLimit:8, font:{ family:'Lato', size:10 } } },
+        y: { grid:{ color:'rgba(112,199,186,0.04)' }, ticks:{ color:'#B6B6B6', font:{ family:'Rubik', size:10 }, callback: v=>`$${v.toFixed(5)}` } }
+      }
+    }
+  });
+}
 
-<!-- FOOTER -->
-<footer>
+function updateChart() {
+  const p = state.prices;
+  const ts = state.timestamps;
+  const ema9  = p.map((_,i) => calcEMA(p.slice(0,i+1), 9));
+  const ema21 = p.map((_,i) => calcEMA(p.slice(0,i+1), 21));
+  state.chart.data.labels = ts;
+  state.chart.data.datasets[0].data = p;
+  state.chart.data.datasets[1].data = ema9;
+  state.chart.data.datasets[2].data = ema21;
+  state.chart.update('none');
+}
 
-<div id="status">Inicializando sistema...</div>
+// ───────────────────────────────────────────
+// TICK
+// ───────────────────────────────────────────
+async function tick() {
+  const price = await fetchPrice();
+  if (!price) { addLog('ERROR API', null); return; }
 
-</footer>
+  if (!state.sessionHigh || price > state.sessionHigh) state.sessionHigh = price;
+  if (!state.sessionLow  || price < state.sessionLow)  state.sessionLow  = price;
 
+  state.prices.push(price);
+  state.timestamps.push(new Date().toLocaleTimeString('es-AR'));
+  if (state.prices.length > MAX_POINTS) { state.prices.shift(); state.timestamps.shift(); }
 
-<script src="script.js"></script>
+  const a = computeSignal(state.prices);
 
+  updateDOM(price, a);
+  updateChart();
+
+  if (a.signal !== 'HOLD' && a.signal !== state.lastSignal) {
+    state.lastSignal = a.signal;
+    showToast(a.signal, price);
+    showAdvisor(a.signal, price, a);
+    addLog(a.signal, price);
+    playBeep(a.signal === 'BUY' ? 'buy' : 'sell');
+  } else if (a.signal === 'HOLD' && state.lastSignal !== 'HOLD') {
+    state.lastSignal = 'HOLD';
+    hideAdvisor();
+    addLog('HOLD', price);
+  }
+}
+
+// ───────────────────────────────────────────
+// COUNTDOWN
+// ───────────────────────────────────────────
+function startCountdown() {
+  state.countdown = 60;
+  clearInterval(state.countdownId);
+  state.countdownId = setInterval(() => {
+    state.countdown = Math.max(0, state.countdown - 1);
+    document.getElementById('countdown').textContent = `${state.countdown}s`;
+  }, 1000);
+}
+
+// ───────────────────────────────────────────
+// INIT
+// ───────────────────────────────────────────
+async function init() {
+  initChart();
+  addLog('INICIO', null);
+  await tick();
+  startCountdown();
+  state.intervalId = setInterval(async () => {
+    state.countdown = 60;
+    await tick();
+    startCountdown();
+  }, 60000);
+}
+
+init();
+</script>
 </body>
-
 </html>

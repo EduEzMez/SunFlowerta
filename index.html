@@ -1,341 +1,89 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
+
 <meta charset="UTF-8">
-<title>Kaspa Trading Assistant</title>
+
+<title>Kaspa Trading Terminal</title>
 
 <link rel="icon" href="Kaspa-Icon-32.png">
 
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@500&family=Lato:wght@300;400&display=swap" rel="stylesheet">
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
 
-<style>
-
-body{
-background:#231F20;
-color:#B6B6B6;
-font-family:Lato;
-margin:0;
-text-align:center;
-}
-
-header{
-font-family:Rubik;
-padding:20px;
-color:#70C7BA;
-font-size:28px;
-display:flex;
-align-items:center;
-justify-content:center;
-gap:15px;
-}
-
-header img{
-height:40px;
-}
-
-.container{
-width:90%;
-max-width:1000px;
-margin:auto;
-}
-
-.price{
-font-size:40px;
-color:#70C7BA;
-margin:20px 0;
-}
-
-canvas{
-background:#2b2728;
-border-radius:10px;
-padding:10px;
-}
-
-.panel{
-margin-top:30px;
-padding:20px;
-background:#2b2728;
-border-radius:10px;
-}
-
-.signal{
-font-size:28px;
-font-family:Rubik;
-}
-
-.buy{
-color:#4cff8f;
-}
-
-.sell{
-color:#ff5c5c;
-}
-
-.neutral{
-color:#B6B6B6;
-}
-
-.advice{
-margin-top:15px;
-font-size:18px;
-line-height:1.6;
-}
-
-.levels{
-margin-top:10px;
-font-size:14px;
-}
-
-</style>
+<link rel="stylesheet" href="style.css">
 
 </head>
 
 <body>
 
 <header>
-<img src="logo.svg">
-Kaspa Trading Assistant
+
+<img src="logo.svg" class="logo">
+
+<h1>Kaspa Trading Terminal</h1>
+
 </header>
 
-<div class="container">
 
-<div class="price" id="price">$0.00</div>
+<div class="dashboard">
 
-<canvas id="chart"></canvas>
+<div class="card">
 
-<div class="panel">
+<h3>Precio</h3>
 
-<div class="signal" id="signal">
-Esperando datos...
-</div>
-
-<div class="advice" id="advice"></div>
-
-<div class="levels" id="levels"></div>
+<div id="price">$0</div>
 
 </div>
 
+
+<div class="card">
+
+<h3>Tendencia</h3>
+
+<div id="trend">-</div>
+
 </div>
 
-<script>
 
-const API="https://api.kaspa.org/info/price?stringOnly=true"
+<div class="card">
 
-let prices=[]
-let times=[]
+<h3>RSI</h3>
 
-const ctx=document.getElementById("chart")
+<div id="rsi">-</div>
 
-const chart=new Chart(ctx,{
-type:"line",
-data:{
-labels:times,
-datasets:[{
-label:"Kaspa Price",
-data:prices,
-borderColor:"#70C7BA",
-borderWidth:2,
-tension:0.2
-}]
-},
-options:{
-plugins:{
-legend:{display:false}
-},
-scales:{
-x:{display:false},
-y:{ticks:{color:"#B6B6B6"}}
-}
-}
-})
+</div>
 
-async function getPrice(){
 
-try{
+<div class="card">
 
-const res=await fetch(API)
-const data=await res.json()
+<h3>MACD</h3>
 
-const price=parseFloat(data.price)
+<div id="macd">-</div>
 
-update(price)
+</div>
 
-}catch(e){
-console.log(e)
-}
+</div>
 
-}
 
-function update(price){
+<div id="chart"></div>
 
-document.getElementById("price").innerText="$"+price.toFixed(6)
 
-prices.push(price)
-times.push(new Date().toLocaleTimeString())
+<div class="signals">
 
-if(prices.length>60){
-prices.shift()
-times.shift()
-}
+<h2>Trading Signal</h2>
 
-chart.update()
+<div id="signalBox">Esperando datos...</div>
 
-analyze()
+<div id="advisor"></div>
 
-}
+</div>
 
-function ATR(){
 
-if(prices.length<2) return 0
-
-let sum=0
-
-for(let i=1;i<prices.length;i++){
-
-sum+=Math.abs(prices[i]-prices[i-1])
-
-}
-
-return sum/(prices.length-1)
-
-}
-
-function fibonacci(){
-
-const high=Math.max(...prices)
-const low=Math.min(...prices)
-
-const diff=high-low
-
-return{
-
-level236:high-diff*0.236,
-level382:high-diff*0.382,
-level50:high-diff*0.5,
-level618:high-diff*0.618
-
-}
-
-}
-
-function trend(){
-
-if(prices.length<10) return "neutral"
-
-const short=avg(prices.slice(-5))
-const long=avg(prices.slice(-15))
-
-if(short>long) return "up"
-
-if(short<long) return "down"
-
-return "neutral"
-
-}
-
-function avg(arr){
-
-return arr.reduce((a,b)=>a+b,0)/arr.length
-
-}
-
-function analyze(){
-
-if(prices.length<20) return
-
-const price=prices[prices.length-1]
-
-const fib=fibonacci()
-
-const atr=ATR()
-
-const t=trend()
-
-let signal="NEUTRAL"
-let advice=""
-let buy=0
-let sell=0
-
-if(t==="up" && price<fib.level382){
-
-signal="COMPRAR"
-
-buy=price
-sell=price+(atr*4)
-
-advice=`Tendencia alcista detectada.
-Podrías colocar una orden de compra cerca de <b>$${buy.toFixed(6)}</b>.
-Objetivo de venta estimado cerca de <b>$${sell.toFixed(6)}</b>.`
-
-alert("Oportunidad de COMPRA detectada")
-
-}
-
-else if(t==="down" && price>fib.level382){
-
-signal="VENDER"
-
-sell=price
-buy=price-(atr*4)
-
-advice=`Tendencia bajista detectada.
-Podrías vender cerca de <b>$${sell.toFixed(6)}</b>.
-Recompra sugerida cerca de <b>$${buy.toFixed(6)}</b>.`
-
-alert("Oportunidad de VENTA detectada")
-
-}
-
-else{
-
-advice="El mercado se encuentra en zona neutral. Esperar ruptura de niveles técnicos."
-
-}
-
-updatePanel(signal,advice,fib)
-
-}
-
-function updatePanel(signal,advice,fib){
-
-const el=document.getElementById("signal")
-
-if(signal==="COMPRAR"){
-el.className="signal buy"
-}
-
-else if(signal==="VENDER"){
-el.className="signal sell"
-}
-
-else{
-el.className="signal neutral"
-}
-
-el.innerText=signal
-
-document.getElementById("advice").innerHTML=advice
-
-document.getElementById("levels").innerHTML=`
-
-Fibonacci:
-
-23.6% → ${fib.level236.toFixed(6)} |
-38.2% → ${fib.level382.toFixed(6)} |
-50% → ${fib.level50.toFixed(6)} |
-61.8% → ${fib.level618.toFixed(6)}
-
-`
-
-}
-
-getPrice()
-
-setInterval(getPrice,60000)
-
-</script>
+<script src="script.js"></script>
 
 </body>
+
 </html>

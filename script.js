@@ -1,53 +1,81 @@
-const API="https://api.kaspa.org/info/price?stringOnly=true"
+const priceElement = document.getElementById("price")
+const trendElement = document.getElementById("trend")
+const rsiElement = document.getElementById("rsi")
+const macdElement = document.getElementById("macd")
+const signalElement = document.getElementById("signalBox")
+const advisorElement = document.getElementById("advisor")
 
-let prices=[]
+let prices = []
 
-const chart=LightweightCharts.createChart(document.getElementById("chart"),{
+const apis = [
 
-layout:{
-background:{color:"#231F20"},
-textColor:"#B6B6B6"
+{
+name:"CoinGecko",
+url:"https://api.coingecko.com/api/v3/simple/price?ids=kaspa&vs_currencies=usd",
+parse:data=>data.kaspa.usd
 },
 
-grid:{
-vertLines:{color:"#333"},
-horzLines:{color:"#333"}
+{
+name:"CoinPaprika",
+url:"https://api.coinpaprika.com/v1/tickers/kas-kaspa",
+parse:data=>data.quotes.USD.price
+},
+
+{
+name:"MEXC",
+url:"https://api.mexc.com/api/v3/ticker/price?symbol=KASUSDT",
+parse:data=>parseFloat(data.price)
+},
+
+{
+name:"Gate.io",
+url:"https://api.gateio.ws/api/v4/spot/tickers?currency_pair=KAS_USDT",
+parse:data=>parseFloat(data[0].last)
 }
 
-})
+]
 
-const series=chart.addLineSeries({
+async function fetchPrice(){
 
-color:"#70C7BA",
-lineWidth:2
-
-})
-
-
-async function getPrice(){
+for(let api of apis){
 
 try{
 
-const res = await fetch(API)
+const res = await fetch(api.url)
 
-const text = await res.text()
+if(!res.ok) continue
 
-const price = parseFloat(text)
+const data = await res.json()
 
-update(price)
+const price = api.parse(data)
 
-}catch(error){
+if(price){
 
-console.log("Error API:",error)
+console.log("API usada:",api.name)
+
+document.getElementById("apiSource").innerText = api.name
+
+updatePrice(price)
+
+return
+
+}
+
+}catch(err){
+
+console.log("Error con",api.name)
 
 }
 
 }
 
+console.log("Todas las APIs fallaron")
 
-function update(price){
+}
 
-document.getElementById("price").innerText="$"+price.toFixed(5)
+function updatePrice(price){
+
+priceElement.innerText="$"+price.toFixed(6)
 
 prices.push(price)
 
@@ -57,36 +85,27 @@ prices.shift()
 
 }
 
-series.update({
-
-time:Math.floor(Date.now()/1000),
-value:price
-
-})
-
-analyze()
+calculateIndicators()
 
 }
-
 
 function EMA(period){
 
 if(prices.length<period) return 0
 
-let k=2/(period+1)
+let k = 2/(period+1)
 
-let ema=prices[0]
+let ema = prices[0]
 
 for(let i=1;i<prices.length;i++){
 
-ema=prices[i]*k + ema*(1-k)
+ema = prices[i]*k + ema*(1-k)
 
 }
 
 return ema
 
 }
-
 
 function RSI(){
 
@@ -110,16 +129,14 @@ return 100-(100/(1+rs))
 
 }
 
-
 function MACD(){
 
-const ema12=EMA(12)
-const ema26=EMA(26)
+const ema12 = EMA(12)
+const ema26 = EMA(26)
 
 return ema12-ema26
 
 }
-
 
 function ATR(){
 
@@ -127,7 +144,7 @@ let sum=0
 
 for(let i=1;i<prices.length;i++){
 
-sum+=Math.abs(prices[i]-prices[i-1])
+sum += Math.abs(prices[i]-prices[i-1])
 
 }
 
@@ -135,113 +152,99 @@ return sum/prices.length
 
 }
 
-
 function fibonacci(){
 
-const high=Math.max(...prices)
-const low=Math.min(...prices)
+const high = Math.max(...prices)
+const low = Math.min(...prices)
 
-const diff=high-low
+const diff = high-low
 
 return {
 
-support:high-diff*0.618,
-
-resistance:high-diff*0.382
-
-}
+support: high-diff*0.618,
+resistance: high-diff*0.382
 
 }
 
+}
 
-function analyze(){
+function calculateIndicators(){
 
-if(prices.length<50) return
+if(prices.length<30) return
 
-const price=prices[prices.length-1]
+const price = prices[prices.length-1]
 
-const ema20=EMA(20)
-const ema50=EMA(50)
+const ema20 = EMA(20)
+const ema50 = EMA(50)
 
-const rsi=RSI()
+const rsi = RSI()
 
-const macd=MACD()
+const macd = MACD()
 
-const atr=ATR()
+const atr = ATR()
 
-const fib=fibonacci()
+const fib = fibonacci()
 
-document.getElementById("rsi").innerText=rsi.toFixed(2)
+rsiElement.innerText=rsi.toFixed(2)
 
-document.getElementById("macd").innerText=macd.toFixed(5)
+macdElement.innerText=macd.toFixed(5)
 
 let trend="Neutral"
 
 if(ema20>ema50) trend="Bullish"
-
 if(ema20<ema50) trend="Bearish"
 
-document.getElementById("trend").innerText=trend
+trendElement.innerText=trend
 
+generateSignal(price,rsi,trend,atr,fib)
+
+}
+
+function generateSignal(price,rsi,trend,atr,fib){
 
 let signal="WAIT"
 
 let advice=""
 
-
 if(trend==="Bullish" && rsi<40 && price<fib.support){
 
 signal="BUY"
 
-const target=price+atr*8
-const stop=price-atr*4
+let target = price + atr*8
+let stop = price - atr*4
 
-advice=`
-
-<b>Entrada:</b> ${price.toFixed(5)} <br>
-<b>Objetivo:</b> ${target.toFixed(5)} <br>
-<b>Stop Loss:</b> ${stop.toFixed(5)}
-
+advice = `
+Entrada: ${price.toFixed(6)}<br>
+Objetivo: ${target.toFixed(6)}<br>
+Stop Loss: ${stop.toFixed(6)}
 `
 
-alert("📈 BUY SIGNAL")
-
 }
-
 
 else if(trend==="Bearish" && rsi>60 && price>fib.resistance){
 
 signal="SELL"
 
-const buyBack=price-atr*8
+let rebuy = price - atr*8
 
-advice=`
-
-<b>Venta:</b> ${price.toFixed(5)} <br>
-<b>Recompra:</b> ${buyBack.toFixed(5)}
-
+advice = `
+Venta: ${price.toFixed(6)}<br>
+Recompra: ${rebuy.toFixed(6)}
 `
 
-alert("📉 SELL SIGNAL")
+}
+
+signalElement.innerText=signal
+
+signalElement.className=""
+
+if(signal==="BUY") signalElement.classList.add("buy")
+if(signal==="SELL") signalElement.classList.add("sell")
+
+advisorElement.innerHTML=advice
 
 }
 
+setInterval(fetchPrice,60000)
 
-const box=document.getElementById("signalBox")
-
-box.innerText=signal
-
-box.className=""
-
-if(signal==="BUY") box.classList.add("buy")
-
-if(signal==="SELL") box.classList.add("sell")
-
-document.getElementById("advisor").innerHTML=advice
-
-}
-
-
-setInterval(getPrice,60000)
-
-getPrice()
+fetchPrice()

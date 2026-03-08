@@ -26,13 +26,21 @@ lineWidth:2
 
 async function getPrice(){
 
-const res=await fetch(API)
+try{
 
-const data=await res.json()
+const res = await fetch(API)
 
-const price=parseFloat(data.price)
+const text = await res.text()
+
+const price = parseFloat(text)
 
 update(price)
+
+}catch(error){
+
+console.log("Error API:",error)
+
+}
 
 }
 

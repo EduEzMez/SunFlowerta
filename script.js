@@ -102,18 +102,55 @@ priceElement.innerText="$"+price.toFixed(6)
 prices.push(price)
 
 if(prices.length>300){
-
 prices.shift()
-
 }
 
-samplesElement.innerText = prices.length
+const time = Math.floor(Date.now() / 1000)
 
-console.log("Histórico:",prices.length)
+chartData.push({
+time: time,
+value: price
+})
+
+series.setData(chartData)
+
+samplesElement.innerText = prices.length
 
 calculateIndicators()
 
 }
+
+// GRAFICO
+// CHART SETUP
+
+const chartContainer = document.getElementById("chart")
+
+const chart = LightweightCharts.createChart(chartContainer, {
+width: chartContainer.clientWidth,
+height: 400,
+layout: {
+background: { color: "#131722" },
+textColor: "#d1d4dc"
+},
+grid: {
+vertLines: { color: "#2b2b43" },
+horzLines: { color: "#2b2b43" }
+},
+crosshair: {
+mode: LightweightCharts.CrosshairMode.Normal
+},
+timeScale: {
+timeVisible: true,
+secondsVisible: true
+}
+})
+
+const series = chart.addLineSeries({
+color: "#00ffaa",
+lineWidth: 2
+})
+
+let chartData = []
 
 // EMA
 

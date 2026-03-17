@@ -781,6 +781,343 @@
       header { padding: 0 1rem; }
       main { padding: 1rem 1rem 3rem; }
     }
+
+    /* ══════════════════════════════════════
+       CHAT IA — KAS Expert
+    ══════════════════════════════════════ */
+    #chat-fab {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 1.5rem;
+      z-index: 9000;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), #4ba89c);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      box-shadow: 0 4px 20px rgba(112,199,186,0.5);
+      transition: transform 0.2s, box-shadow 0.2s;
+      animation: fabPulse 3s infinite;
+    }
+    #chat-fab:hover { transform: scale(1.08); box-shadow: 0 6px 28px rgba(112,199,186,0.7); }
+    #chat-fab.open  { background: linear-gradient(135deg, #e05555, #c0392b); animation: none; }
+
+    @keyframes fabPulse {
+      0%,100% { box-shadow: 0 4px 20px rgba(112,199,186,0.5); }
+      50%      { box-shadow: 0 4px 28px rgba(112,199,186,0.85); }
+    }
+
+    #chat-unread {
+      position: absolute;
+      top: -2px; right: -2px;
+      width: 18px; height: 18px;
+      background: var(--danger);
+      border-radius: 50%;
+      font-size: 0.6rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      display: none;
+    }
+
+    #chat-panel {
+      position: fixed;
+      bottom: 5rem;
+      left: 1.5rem;
+      z-index: 8999;
+      width: 400px;
+      max-height: 600px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 16px 60px rgba(0,0,0,0.7), 0 0 30px rgba(112,199,186,0.15);
+      transform: translateY(20px) scale(0.95);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    }
+
+    #chat-panel.open {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .chat-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 1rem 1.2rem;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .chat-header-icon {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: var(--primary-dim);
+      border: 1.5px solid var(--primary);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    .chat-header-info { flex: 1; }
+
+    .chat-header-name {
+      font-family: 'Rubik', sans-serif;
+      font-weight: 700;
+      font-size: 0.88rem;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .chat-header-status {
+      font-size: 0.65rem;
+      color: var(--primary);
+      margin-top: 2px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .chat-status-dot {
+      width: 6px; height: 6px;
+      background: var(--primary);
+      border-radius: 50%;
+      animation: pulseAnim 1.5s infinite;
+    }
+
+    .chat-header-close {
+      background: none;
+      border: none;
+      color: var(--secondary);
+      font-size: 1.1rem;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 6px;
+      transition: color 0.2s, background 0.2s;
+    }
+    .chat-header-close:hover { color: var(--text); background: var(--bg3); }
+
+    #chat-context-bar {
+      background: var(--bg3);
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 1rem;
+      font-size: 0.65rem;
+      color: var(--secondary);
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+
+    .ctx-item { display: flex; gap: 4px; align-items: center; }
+    .ctx-key  { color: rgba(182,182,182,0.5); }
+    .ctx-val  { font-family: 'Rubik', sans-serif; font-weight: 600; color: var(--primary); }
+    .ctx-val.red  { color: var(--danger); }
+    .ctx-val.warn { color: var(--warn); }
+
+    #chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-height: 200px;
+      max-height: 360px;
+    }
+
+    #chat-messages::-webkit-scrollbar { width: 4px; }
+    #chat-messages::-webkit-scrollbar-track { background: transparent; }
+    #chat-messages::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 4px; opacity: 0.4; }
+
+    .chat-msg {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      animation: msgIn 0.25s ease;
+    }
+
+    @keyframes msgIn {
+      from { opacity:0; transform: translateY(6px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+
+    .chat-msg.user { flex-direction: row-reverse; }
+
+    .chat-avatar {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .chat-msg.ai   .chat-avatar { background: var(--primary-dim); border: 1px solid var(--primary); }
+    .chat-msg.user .chat-avatar { background: var(--bg3); border: 1px solid var(--border); }
+
+    .chat-bubble {
+      max-width: 78%;
+      padding: 0.6rem 0.85rem;
+      border-radius: 14px;
+      font-size: 0.8rem;
+      line-height: 1.6;
+    }
+
+    .chat-msg.ai   .chat-bubble {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-top-left-radius: 4px;
+    }
+
+    .chat-msg.user .chat-bubble {
+      background: var(--primary-dim);
+      border: 1px solid rgba(112,199,186,0.3);
+      color: var(--text);
+      border-top-right-radius: 4px;
+      text-align: right;
+    }
+
+    .chat-bubble strong { color: var(--primary); }
+    .chat-bubble .price-chip {
+      display: inline-block;
+      background: rgba(112,199,186,0.15);
+      border: 1px solid rgba(112,199,186,0.3);
+      border-radius: 6px;
+      padding: 1px 6px;
+      font-family: 'Rubik', sans-serif;
+      font-weight: 700;
+      font-size: 0.78rem;
+      color: var(--primary);
+    }
+    .chat-bubble .price-chip.red {
+      background: rgba(255,107,107,0.1);
+      border-color: rgba(255,107,107,0.3);
+      color: var(--danger);
+    }
+
+    .chat-time {
+      font-size: 0.58rem;
+      color: rgba(182,182,182,0.35);
+      margin-top: 3px;
+      text-align: right;
+    }
+    .chat-msg.ai .chat-time { text-align: left; }
+
+    .chat-typing {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .chat-typing .chat-avatar { background: var(--primary-dim); border: 1px solid var(--primary); }
+
+    .typing-dots {
+      display: flex;
+      gap: 4px;
+      padding: 0.55rem 0.85rem;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      border-top-left-radius: 4px;
+    }
+
+    .typing-dot {
+      width: 6px; height: 6px;
+      background: var(--primary);
+      border-radius: 50%;
+      animation: typingBounce 1.2s infinite;
+      opacity: 0.5;
+    }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typingBounce {
+      0%,60%,100% { transform: translateY(0); opacity:0.5; }
+      30% { transform: translateY(-5px); opacity:1; }
+    }
+
+    .chat-footer {
+      padding: 0.75rem 1rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    #chat-input {
+      flex: 1;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.55rem 0.85rem;
+      color: var(--text);
+      font-family: 'Lato', sans-serif;
+      font-size: 0.82rem;
+      outline: none;
+      transition: border-color 0.2s;
+      resize: none;
+      min-height: 36px;
+      max-height: 80px;
+    }
+
+    #chat-input:focus { border-color: var(--primary); }
+    #chat-input::placeholder { color: rgba(182,182,182,0.35); }
+
+    #chat-send {
+      width: 36px; height: 36px;
+      background: var(--primary);
+      border: none;
+      border-radius: 10px;
+      color: #231F20;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+      transition: all 0.2s;
+      flex-shrink: 0;
+      align-self: flex-end;
+    }
+
+    #chat-send:hover  { background: #8fd8cc; transform: scale(1.05); }
+    #chat-send:active { transform: scale(0.95); }
+    #chat-send:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    .chat-suggestions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      padding: 0 1rem 0.6rem;
+      flex-shrink: 0;
+    }
+
+    .chat-suggestion {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 10px;
+      font-size: 0.68rem;
+      color: var(--secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .chat-suggestion:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-dim); }
+
+    @media (max-width: 480px) {
+      #chat-panel { width: calc(100vw - 3rem); left: 1.5rem; }
+    }
+
   </style>
 </head>
 <body>
@@ -1749,6 +2086,301 @@ async function init() {
 }
 
 init();
+
+
+// ══════════════════════════════════════════════
+// CHAT IA — KAS Expert
+// ══════════════════════════════════════════════
+const chatState = {
+  open: false,
+  history: [],      // historial para la API (multi-turn)
+  isLoading: false,
+  unread: 0,
+};
+
+function toggleChat() {
+  chatState.open = !chatState.open;
+  const panel = document.getElementById('chat-panel');
+  const fab   = document.getElementById('chat-fab');
+  panel.classList.toggle('open', chatState.open);
+  fab.classList.toggle('open', chatState.open);
+  fab.textContent = chatState.open ? '✕' : '🤖';
+  if (chatState.open) {
+    clearUnread();
+    updateChatContext();
+    setTimeout(() => document.getElementById('chat-input')?.focus(), 300);
+  }
+}
+
+function clearUnread() {
+  chatState.unread = 0;
+  document.getElementById('chat-unread').style.display = 'none';
+}
+
+function addUnread() {
+  if (chatState.open) return;
+  chatState.unread++;
+  const badge = document.getElementById('chat-unread');
+  badge.textContent = chatState.unread;
+  badge.style.display = 'flex';
+}
+
+function updateChatContext() {
+  const price  = state.prices.at(-1);
+  const a      = computeSignal(state.prices);
+  if (price)  document.getElementById('ctx-price').textContent  = `$${price.toFixed(6)}`;
+  if (a.rsi)  {
+    const el = document.getElementById('ctx-rsi');
+    el.textContent = a.rsi.toFixed(1);
+    el.className = `ctx-val${a.rsi < 35 ? '' : a.rsi > 65 ? ' red' : ' warn'}`;
+  }
+  const sigEl = document.getElementById('ctx-signal');
+  sigEl.textContent = a.signal;
+  sigEl.className = `ctx-val${a.signal==='BUY'?'':a.signal==='SELL'?' red':' warn'}`;
+
+  if (a.trend) {
+    const tEl = document.getElementById('ctx-trend');
+    const icons = {up:'↑', down:'↓', flat:'→'};
+    tEl.textContent = `${icons[a.trend.dir]} ${a.trend.pct.toFixed(2)}%`;
+    tEl.className = `ctx-val${a.trend.dir==='up'?'':a.trend.dir==='down'?' red':' warn'}`;
+  }
+}
+
+// Construye el contexto del mercado para el system prompt
+function buildMarketContext() {
+  const price  = state.prices.at(-1);
+  const a      = computeSignal(state.prices);
+  const fib    = state.sessionHigh && state.sessionLow ? calcFib(state.sessionHigh, state.sessionLow) : null;
+  const f      = n => n ? `$${parseFloat(n).toFixed(6)}` : 'N/A';
+
+  let fibStr = '';
+  if (fib) {
+    fibStr = Object.entries(fib).map(([k,v]) => `  Fib ${k}: ${f(v)}`).join('\n');
+  }
+
+  return `DATOS EN TIEMPO REAL DEL DASHBOARD — KASPA (KAS/USD):
+
+Precio actual:     ${f(price)}
+Máximo sesión:     ${f(state.sessionHigh)}
+Mínimo sesión:     ${f(state.sessionLow)}
+Señal técnica:     ${a.signal} (score: ${a.score})
+Razones señal:     ${a.reason || 'N/A'}
+RSI (14):          ${a.rsi ? a.rsi.toFixed(2) : 'N/A'} ${a.rsi < 35 ? '(SOBREVENDIDO)' : a.rsi > 65 ? '(SOBRECOMPRADO)' : '(NEUTRO)'}
+EMA 9:             ${f(a.ema9)}
+EMA 21:            ${f(a.ema21)}
+ATR (14):          ${a.atr ? f(a.atr) : 'N/A'} (${a.atrPct ? a.atrPct.toFixed(2) + '%' : 'N/A'} del precio)
+Tendencia ${a.trend ? a.trend.window : '?'} min: ${a.trend ? a.trend.dir.toUpperCase() + ' ' + a.trend.pct.toFixed(3) + '%' : 'N/A'}
+Muestras:          ${state.prices.length} puntos (cada 60s)
+
+Niveles Fibonacci (sesión):
+${fibStr || '  Sin datos suficientes'}
+
+Últimas 5 señales del log:
+${state.signalLog.slice(0,5).map(s => `  ${s.time} — ${s.signal} @ ${f(s.price)}`).join('\n') || '  Sin señales aún'}`;
+}
+
+function buildSystemPrompt() {
+  return `Sos un experto analista financiero especializado en criptomonedas, con foco en Kaspa (KAS). Tu rol es asesorar al usuario sobre si conviene comprar o vender KAS, a qué precio entrar, dónde poner stop-loss y take profit, y cómo interpretar los indicadores técnicos.
+
+REGLAS:
+- Siempre usá los datos en tiempo real que se te proveen al inicio de cada mensaje.
+- Respondé en español, de forma clara y directa.
+- Cuando des precios, siempre especificá el valor exacto en USD con 6 decimales.
+- Si la señal es BUY: indicá precio de entrada, stop-loss (ATR ×1.5 hacia abajo), take profit 1 (Fib 23.6%) y take profit 2 (Fib 0%).
+- Si la señal es SELL: indicá precio de venta, stop-loss (ATR ×1.5 hacia arriba), zona de recompra 1 (Fib 61.8%) y zona de recompra 2 (Fib 100%).
+- Si es HOLD: explicá qué condiciones deben darse para que cambie.
+- Podés usar emojis con moderación (📈📉💡⚠️) para hacer la respuesta más legible.
+- Siempre añadí un disclaimer breve: "Esto no es asesoramiento financiero profesional."
+- Sé conciso pero completo. Máximo 250 palabras por respuesta.
+- No repitas los datos crudos del mercado si ya los ves en el contexto; interpretálos.`;
+}
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const msg   = input.value.trim();
+  if (!msg || chatState.isLoading) return;
+
+  input.value = '';
+  input.style.height = 'auto';
+  appendMessage('user', msg);
+  hideSuggestions();
+  await callAI(msg);
+}
+
+function sendSuggestion(text) {
+  document.getElementById('chat-input').value = text;
+  sendChat();
+}
+
+function handleChatKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 80) + 'px';
+}
+
+function hideSuggestions() {
+  const s = document.getElementById('chat-suggestions');
+  if (s) s.style.display = 'none';
+}
+
+function appendMessage(role, text) {
+  const msgs = document.getElementById('chat-messages');
+  const time = new Date().toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' });
+  const isAI = role === 'ai';
+  const div = document.createElement('div');
+  div.className = `chat-msg ${role}`;
+  div.innerHTML = `
+    <div class="chat-avatar">${isAI ? '🧠' : '👤'}</div>
+    <div>
+      <div class="chat-bubble">${formatChatText(text)}</div>
+      <div class="chat-time">${time}</div>
+    </div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function formatChatText(text) {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\$([0-9]+\.[0-9]+)/g, '<span class="price-chip">$$$1</span>')
+    .replace(/\n/g, '<br>');
+}
+
+function showTyping() {
+  const msgs = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'chat-typing';
+  div.id = 'chat-typing';
+  div.innerHTML = `
+    <div class="chat-avatar">🧠</div>
+    <div class="typing-dots">
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+    </div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function hideTyping() {
+  document.getElementById('chat-typing')?.remove();
+}
+
+async function callAI(userMessage) {
+  chatState.isLoading = true;
+  document.getElementById('chat-send').disabled = true;
+  showTyping();
+  updateChatContext();
+
+  const marketCtx = buildMarketContext();
+  const systemPrompt = buildSystemPrompt();
+
+  // Agregar al historial con contexto del mercado embebido
+  const msgWithCtx = `${marketCtx}\n\n---\n\nPREGUNTA DEL USUARIO: ${userMessage}`;
+  chatState.history.push({ role: 'user', content: msgWithCtx });
+
+  // Mantener historial razonable (últimos 8 mensajes)
+  if (chatState.history.length > 8) chatState.history = chatState.history.slice(-8);
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: systemPrompt,
+        messages: chatState.history,
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.error) throw new Error(data.error.message);
+
+    const reply = data.content?.[0]?.text || 'No pude obtener respuesta.';
+    chatState.history.push({ role: 'assistant', content: reply });
+
+    hideTyping();
+    appendMessage('ai', reply);
+    if (!chatState.open) addUnread();
+
+  } catch(err) {
+    hideTyping();
+    appendMessage('ai', `⚠️ Error al consultar la IA: ${err.message}. Verificá tu conexión o intentá de nuevo.`);
+    chatState.history.pop(); // revertir último mensaje fallido
+  }
+
+  chatState.isLoading = false;
+  document.getElementById('chat-send').disabled = false;
+  document.getElementById('chat-input').focus();
+}
+
 </script>
+
+<!-- ══ CHAT FAB ══ -->
+<button id="chat-fab" onclick="toggleChat()" title="Chat con IA — Experto KAS">
+  🤖
+  <span id="chat-unread">1</span>
+</button>
+
+<!-- ══ CHAT PANEL ══ -->
+<div id="chat-panel">
+
+  <div class="chat-header">
+    <div class="chat-header-icon">🧠</div>
+    <div class="chat-header-info">
+      <div class="chat-header-name">KAS Expert · IA Financiera</div>
+      <div class="chat-header-status">
+        <span class="chat-status-dot"></span>
+        En línea · Análisis en tiempo real
+      </div>
+    </div>
+    <button class="chat-header-close" onclick="toggleChat()">✕</button>
+  </div>
+
+  <div id="chat-context-bar">
+    <span class="ctx-item"><span class="ctx-key">Precio:</span><span class="ctx-val" id="ctx-price">—</span></span>
+    <span class="ctx-item"><span class="ctx-key">RSI:</span><span class="ctx-val" id="ctx-rsi">—</span></span>
+    <span class="ctx-item"><span class="ctx-key">Señal:</span><span class="ctx-val" id="ctx-signal">—</span></span>
+    <span class="ctx-item"><span class="ctx-key">Tendencia:</span><span class="ctx-val" id="ctx-trend">—</span></span>
+  </div>
+
+  <div id="chat-messages">
+    <div class="chat-msg ai">
+      <div class="chat-avatar">🧠</div>
+      <div>
+        <div class="chat-bubble">
+          ¡Hola! Soy tu asesor experto en <strong>Kaspa (KAS)</strong>. Tengo acceso en tiempo real al precio, RSI, EMAs, ATR y niveles Fibonacci del dashboard.<br><br>
+          Podés preguntarme <strong>¿conviene comprar o vender ahora?</strong>, qué niveles observar, cómo interpretar la tendencia actual, o cualquier duda sobre el mercado de KAS.
+        </div>
+        <div class="chat-time">Ahora</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chat-suggestions" id="chat-suggestions">
+    <button class="chat-suggestion" onclick="sendSuggestion('¿Conviene comprar KAS ahora?')">¿Comprar ahora?</button>
+    <button class="chat-suggestion" onclick="sendSuggestion('¿Cuándo debería vender?')">¿Cuándo vender?</button>
+    <button class="chat-suggestion" onclick="sendSuggestion('¿Cómo está la tendencia actual?')">Ver tendencia</button>
+    <button class="chat-suggestion" onclick="sendSuggestion('¿Cuáles son los niveles de soporte y resistencia clave?')">Soporte / resistencia</button>
+    <button class="chat-suggestion" onclick="sendSuggestion('Explicame el RSI actual y qué significa para KAS')">Explicar RSI</button>
+    <button class="chat-suggestion" onclick="sendSuggestion('¿Cuál es tu estrategia recomendada para hoy?')">Estrategia del día</button>
+  </div>
+
+  <div class="chat-footer">
+    <textarea id="chat-input" placeholder="Preguntá sobre KAS..." rows="1"
+      onkeydown="handleChatKey(event)"
+      oninput="autoResize(this)"></textarea>
+    <button id="chat-send" onclick="sendChat()" title="Enviar">
+      ➤
+    </button>
+  </div>
+
+</div>
+
 </body>
 </html>

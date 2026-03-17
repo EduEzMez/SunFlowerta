@@ -607,30 +607,125 @@
       z-index: 9999;
       background: var(--card);
       border: 1px solid var(--primary);
-      border-radius: 14px;
-      padding: 1rem 1.3rem;
-      min-width: 260px;
-      max-width: 340px;
-      box-shadow: 0 8px 40px rgba(0,0,0,0.6), 0 0 20px var(--primary-glow);
+      border-radius: 16px;
+      padding: 1.1rem 1.3rem 0.6rem;
+      min-width: 300px;
+      max-width: 380px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.7), 0 0 24px var(--primary-glow);
       transform: translateX(130%);
       transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
     }
 
     #toast.show { transform: translateX(0); }
-    #toast.sell-toast { border-color: var(--danger); box-shadow: 0 8px 40px rgba(0,0,0,0.6), 0 0 20px rgba(255,107,107,0.3); }
+    #toast.sell-toast { border-color: var(--danger); box-shadow: 0 8px 40px rgba(0,0,0,0.7), 0 0 24px rgba(255,107,107,0.4); }
+    #toast.trend-down-toast { border-color: var(--danger); box-shadow: 0 8px 40px rgba(0,0,0,0.7), 0 0 24px rgba(255,107,107,0.4); }
+    #toast.trend-up-toast   { border-color: var(--primary); box-shadow: 0 8px 40px rgba(0,0,0,0.7), 0 0 24px var(--primary-glow); }
 
-    .toast-icon { font-size: 1.5rem; flex-shrink:0; margin-top:2px; }
+    .toast-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 0.7rem;
+    }
+
+    .toast-icon { font-size: 1.6rem; flex-shrink:0; margin-top:2px; }
+
+    .toast-body { flex: 1; }
+
     .toast-title {
       font-family:'Rubik',sans-serif;
       font-weight:700;
-      font-size:0.88rem;
+      font-size:0.9rem;
       color:var(--text);
-      margin-bottom:3px;
+      margin-bottom:4px;
     }
-    .toast-msg { font-size:0.75rem; color:var(--secondary); line-height:1.4; }
+    .toast-msg  { font-size:0.76rem; color:var(--secondary); line-height:1.5; }
+    .toast-meta { font-size:0.68rem; color:rgba(182,182,182,0.5); margin-top:4px; }
+
+    .toast-close {
+      background: none;
+      border: none;
+      color: var(--secondary);
+      cursor: pointer;
+      font-size: 1rem;
+      padding: 0 0 0 8px;
+      line-height: 1;
+      flex-shrink: 0;
+      opacity: 0.5;
+      transition: opacity 0.2s;
+    }
+    .toast-close:hover { opacity: 1; }
+
+    .toast-timer-bar {
+      height: 3px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 2px;
+    }
+
+    .toast-timer-fill {
+      height: 100%;
+      border-radius: 3px;
+      width: 100%;
+      transition: width linear;
+    }
+
+    #toast.sell-toast      .toast-timer-fill,
+    #toast.trend-down-toast .toast-timer-fill { background: var(--danger); }
+    #toast.show            .toast-timer-fill,
+    #toast.trend-up-toast  .toast-timer-fill  { background: var(--primary); }
+
+    /* ── TREND INDICATOR ── */
+    .trend-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0.7rem 1.2rem;
+      font-size: 0.78rem;
+    }
+
+    .trend-label {
+      font-family: 'Rubik', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--secondary);
+      white-space: nowrap;
+    }
+
+    .trend-badge {
+      font-family: 'Rubik', sans-serif;
+      font-weight: 700;
+      font-size: 0.75rem;
+      padding: 3px 10px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+
+    .trend-badge.up   { background: var(--primary-dim); color: var(--primary); border: 1px solid var(--primary); }
+    .trend-badge.down { background: var(--danger-dim);  color: var(--danger);  border: 1px solid var(--danger); }
+    .trend-badge.flat { background: var(--warn-dim);    color: var(--warn);    border: 1px solid var(--warn); }
+
+    .trend-detail {
+      flex: 1;
+      color: var(--secondary);
+      font-size: 0.72rem;
+    }
+
+    .trend-pct {
+      font-family: 'Rubik', sans-serif;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .trend-pct.up   { color: var(--primary); }
+    .trend-pct.down { color: var(--danger); }
+    .trend-pct.flat { color: var(--warn); }
 
     footer {
       text-align:center;
@@ -758,6 +853,14 @@
     <canvas id="priceChart"></canvas>
   </div>
 
+  <!-- TREND DETECTOR BAR -->
+  <div class="trend-bar" id="trend-bar">
+    <span class="trend-label">Tendencia</span>
+    <span class="trend-badge flat" id="trend-badge">ANALIZANDO</span>
+    <span class="trend-detail" id="trend-detail">Recopilando datos de precio...</span>
+    <span class="trend-pct flat" id="trend-pct">—</span>
+  </div>
+
   <!-- INDICATORS -->
   <div class="indicators-row">
     <div class="ind-card">
@@ -847,10 +950,17 @@
 
 <!-- TOAST -->
 <div id="toast">
-  <div class="toast-icon" id="toast-icon">📊</div>
-  <div class="toast-content">
-    <div class="toast-title" id="toast-title">Señal detectada</div>
-    <div class="toast-msg" id="toast-msg"></div>
+  <div class="toast-top">
+    <div class="toast-icon" id="toast-icon">📊</div>
+    <div class="toast-body">
+      <div class="toast-title" id="toast-title">Señal detectada</div>
+      <div class="toast-msg"  id="toast-msg"></div>
+      <div class="toast-meta" id="toast-meta"></div>
+    </div>
+    <button class="toast-close" onclick="closeToast()" title="Cerrar">✕</button>
+  </div>
+  <div class="toast-timer-bar">
+    <div class="toast-timer-fill" id="toast-timer-fill"></div>
   </div>
 </div>
 
@@ -918,6 +1028,7 @@ const state = {
   sessionHigh: null,
   sessionLow: null,
   signalLog: [],
+  lastTrendSignal: null,
 };
 
 // ───────────────────────────────────────────
@@ -994,6 +1105,71 @@ function calcFib(high, low) {
 // ───────────────────────────────────────────
 // SIGNAL ENGINE
 // ───────────────────────────────────────────
+// ───────────────────────────────────────────
+// TENDENCIA SOSTENIDA (regresión lineal)
+// Detecta movimientos de 30–60 min usando pendiente
+// ───────────────────────────────────────────
+function calcLinearSlope(arr) {
+  const n = arr.length;
+  if (n < 2) return 0;
+  const meanX = (n - 1) / 2;
+  const meanY = arr.reduce((a,b) => a+b, 0) / n;
+  let num = 0, den = 0;
+  arr.forEach((y, x) => {
+    num += (x - meanX) * (y - meanY);
+    den += (x - meanX) ** 2;
+  });
+  return den === 0 ? 0 : num / den;
+}
+
+function detectTrend(prices) {
+  if (prices.length < 10) return { dir:'flat', pct:0, label:'Sin datos', window:0 };
+
+  // Ventanas de análisis: 30 min (30 pts), 60 min (60 pts), o lo que haya
+  const windows = [60, 30, 20, 10].filter(w => prices.length >= w);
+  const best = windows[0];
+  const slice = prices.slice(-best);
+  const first = slice[0];
+  const last  = slice.at(-1);
+  const pct   = ((last - first) / first) * 100;
+  const slope = calcLinearSlope(slice);
+  const slopePct = (slope / first) * 100; // pendiente normalizada por precio
+
+  // Umbral dinámico: al menos 0.3% de movimiento para considerar tendencia
+  const threshold = 0.3;
+  let dir, label;
+
+  if (slopePct < -threshold / best) {
+    dir   = 'down';
+    label = `Bajada sostenida ${best} min`;
+  } else if (slopePct > threshold / best) {
+    dir   = 'up';
+    label = `Subida sostenida ${best} min`;
+  } else {
+    dir   = 'flat';
+    label = `Lateral / sin tendencia`;
+  }
+
+  return { dir, pct, slopePct, label, window: best, first, last };
+}
+
+function updateTrendBar(trend) {
+  const badge  = document.getElementById('trend-badge');
+  const detail = document.getElementById('trend-detail');
+  const pctEl  = document.getElementById('trend-pct');
+
+  const icons = { up:'↑', down:'↓', flat:'→' };
+  const labels = { up:'ALCISTA', down:'BAJISTA', flat:'LATERAL' };
+
+  badge.textContent = `${icons[trend.dir]} ${labels[trend.dir]}`;
+  badge.className   = `trend-badge ${trend.dir}`;
+  detail.textContent = `${trend.label} · desde $${trend.first?.toFixed(6) ?? '—'}`;
+
+  const sign = trend.pct > 0 ? '+' : '';
+  pctEl.textContent = `${sign}${trend.pct.toFixed(3)}%`;
+  pctEl.className   = `trend-pct ${trend.dir}`;
+}
+
 function computeSignal(prices) {
   if (prices.length < 22) return { signal:'HOLD', reason:`Recopilando datos (${prices.length}/22)...`, score:0 };
 
@@ -1002,22 +1178,35 @@ function computeSignal(prices) {
   const ema21 = calcEMA(prices, 21);
   const atr   = calcATR(prices);
   const price = prices.at(-1);
+  const trend = detectTrend(prices);
 
   let score = 0;
   const reasons = [];
 
+  // RSI
   if (rsi < 35)      { score += 2; reasons.push(`RSI sobrevendido (${rsi.toFixed(1)})`); }
   else if (rsi < 45) { score += 1; reasons.push(`RSI bajo (${rsi.toFixed(1)})`); }
   else if (rsi > 65) { score -= 2; reasons.push(`RSI sobrecomprado (${rsi.toFixed(1)})`); }
   else if (rsi > 55) { score -= 1; reasons.push(`RSI alto (${rsi.toFixed(1)})`); }
 
+  // EMA cross
   if (ema9 > ema21) { score += 2; reasons.push('EMA9>EMA21 alcista'); }
   else              { score -= 2; reasons.push('EMA9<EMA21 bajista'); }
 
+  // Momentum corto
   const mom5 = prices.slice(-5);
   const rising = mom5.filter((v,i)=>i>0&&v>mom5[i-1]).length;
   if (rising >= 4) { score += 1; reasons.push('Momentum alcista'); }
   else if (rising <= 1) { score -= 1; reasons.push('Momentum bajista'); }
+
+  // TENDENCIA SOSTENIDA (30-60 min) — peso extra si hay movimiento claro
+  if (trend.dir === 'down' && trend.pct < -0.5) {
+    score -= 2;
+    reasons.push(`Tendencia bajista ${trend.window}min (${trend.pct.toFixed(2)}%)`);
+  } else if (trend.dir === 'up' && trend.pct > 0.5) {
+    score += 2;
+    reasons.push(`Tendencia alcista ${trend.window}min (+${trend.pct.toFixed(2)}%)`);
+  }
 
   const atrPct = atr ? atr/price*100 : 0;
   if (atrPct > 1.5) reasons.push(`Alta volatilidad (${atrPct.toFixed(2)}%)`);
@@ -1027,7 +1216,7 @@ function computeSignal(prices) {
   else if (score <= -3) signal = 'SELL';
   else                  signal = 'HOLD';
 
-  return { signal, reason: reasons.join(' · '), score, rsi, ema9, ema21, atr, atrPct };
+  return { signal, reason: reasons.join(' · '), score, rsi, ema9, ema21, atr, atrPct, trend };
 }
 
 // ───────────────────────────────────────────
@@ -1176,6 +1365,9 @@ function updateDOM(price, a) {
   document.getElementById('mom-bar').style.background = r>=6?'var(--primary)':r<=2?'var(--danger)':'var(--warn)';
   document.getElementById('mom-desc').textContent = r>=6?'↑ Tendencia alcista':r<=2?'↓ Tendencia bajista':'→ Neutral';
 
+  // Trend bar
+  if (a.trend) updateTrendBar(a.trend);
+
   // Fibonacci
   const fibEl = document.getElementById('fib-levels');
   if (state.sessionHigh && state.sessionLow && state.sessionHigh !== state.sessionLow) {
@@ -1282,16 +1474,78 @@ function hideAdvisor() {
 // ───────────────────────────────────────────
 // TOAST
 // ───────────────────────────────────────────
-function showToast(signal, price) {
+let toastTimerId = null;
+
+function closeToast() {
   const t = document.getElementById('toast');
-  const buy = signal === 'BUY';
-  t.className = buy ? 'show' : 'show sell-toast';
-  document.getElementById('toast-icon').textContent = buy ? '🟢' : '🔴';
-  document.getElementById('toast-title').textContent = buy ? '⚡ SEÑAL DE COMPRA' : '⚠️ SEÑAL DE VENTA';
-  document.getElementById('toast-msg').textContent =
-    buy ? `Precio: $${price.toFixed(6)} — Condiciones de acumulación detectadas.`
-        : `Precio: $${price.toFixed(6)} — Posible distribución o corrección.`;
-  setTimeout(() => { t.className = ''; }, 7000);
+  t.className = '';
+  clearTimeout(toastTimerId);
+  const fill = document.getElementById('toast-timer-fill');
+  fill.style.transition = 'none';
+  fill.style.width = '0%';
+}
+
+function showToast(signal, price, trendInfo) {
+  const DURATION = 3 * 60 * 1000; // 3 minutos
+  const t = document.getElementById('toast');
+  const isBuy = signal === 'BUY';
+  const isTrendDown = signal === 'TREND_DOWN';
+  const isTrendUp   = signal === 'TREND_UP';
+
+  // Clase del toast
+  if (isBuy || isTrendUp)        t.className = 'show trend-up-toast';
+  else if (!isBuy || isTrendDown) t.className = 'show sell-toast trend-down-toast';
+  else                            t.className = 'show sell-toast';
+
+  if      (isBuy)       t.className = 'show';
+  else if (!isBuy && signal !== 'TREND_DOWN' && signal !== 'TREND_UP') t.className = 'show sell-toast';
+  else if (isTrendDown) t.className = 'show trend-down-toast';
+  else if (isTrendUp)   t.className = 'show trend-up-toast';
+
+  // Ícono y título
+  const icons  = { BUY:'🟢', SELL:'🔴', TREND_DOWN:'📉', TREND_UP:'📈' };
+  const titles = {
+    BUY:        '⚡ SEÑAL DE COMPRA',
+    SELL:       '⚠️ SEÑAL DE VENTA',
+    TREND_DOWN: '📉 TENDENCIA BAJISTA DETECTADA',
+    TREND_UP:   '📈 TENDENCIA ALCISTA DETECTADA',
+  };
+  document.getElementById('toast-icon').textContent  = icons[signal]  || '📊';
+  document.getElementById('toast-title').textContent = titles[signal] || 'Señal detectada';
+
+  // Mensaje
+  let msg = '';
+  if (signal === 'BUY')
+    msg = `Precio: $${price.toFixed(6)} — Condiciones de acumulación detectadas.`;
+  else if (signal === 'SELL')
+    msg = `Precio: $${price.toFixed(6)} — Posible distribución o corrección.`;
+  else if (trendInfo) {
+    const sign = trendInfo.pct > 0 ? '+' : '';
+    msg = `Precio: $${price.toFixed(6)} — Movimiento de ${sign}${trendInfo.pct.toFixed(3)}% en ${trendInfo.window} min.`;
+  }
+  document.getElementById('toast-msg').textContent = msg;
+
+  // Meta: desde / hasta
+  let meta = '';
+  if (trendInfo && trendInfo.first) {
+    meta = `Desde $${trendInfo.first.toFixed(6)} → $${price.toFixed(6)}`;
+  }
+  document.getElementById('toast-meta').textContent = meta;
+
+  // Timer bar animada
+  const fill = document.getElementById('toast-timer-fill');
+  fill.style.transition = 'none';
+  fill.style.width = '100%';
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      fill.style.transition = `width ${DURATION}ms linear`;
+      fill.style.width = '0%';
+    });
+  });
+
+  // Auto-cierre a los 3 minutos
+  clearTimeout(toastTimerId);
+  toastTimerId = setTimeout(() => { closeToast(); }, DURATION);
 }
 
 // ───────────────────────────────────────────
@@ -1379,9 +1633,10 @@ async function tick() {
   updateDOM(price, a);
   updateChart();
 
+  // ── Señal técnica (RSI+EMA+Momentum) ──
   if (a.signal !== 'HOLD' && a.signal !== state.lastSignal) {
     state.lastSignal = a.signal;
-    showToast(a.signal, price);
+    showToast(a.signal, price, a.trend);
     showAdvisor(a.signal, price, a);
     addLog(a.signal, price);
     playBeep(a.signal === 'BUY' ? 'buy' : 'sell');
@@ -1393,7 +1648,31 @@ async function tick() {
     addLog('HOLD', price);
   }
 
+  // ── Tendencia sostenida (30-60 min) — alerta independiente ──
+  const trend = a.trend;
+  if (trend && prices_length_ok(state.prices)) {
+    const trendSig = trend.dir === 'down' ? 'TREND_DOWN' : trend.dir === 'up' ? 'TREND_UP' : null;
+    if (trendSig && trendSig !== state.lastTrendSignal && Math.abs(trend.pct) >= 0.5) {
+      state.lastTrendSignal = trendSig;
+      showToast(trendSig, price, trend);
+      addLog(`TENDENCIA ${trend.dir.toUpperCase()} ${trend.pct.toFixed(2)}%`, price);
+      // Si la tendencia confirma señal técnica, mostrar advisor también
+      if (trendSig === 'TREND_DOWN' && a.signal === 'SELL') {
+        showAdvisor('SELL', price, a);
+      } else if (trendSig === 'TREND_UP' && a.signal === 'BUY') {
+        showAdvisor('BUY', price, a);
+      }
+      playBeep(trendSig === 'TREND_UP' ? 'buy' : 'sell');
+    } else if (trend.dir === 'flat' && state.lastTrendSignal !== 'flat') {
+      state.lastTrendSignal = 'flat';
+    }
+  }
+
   saveHistory();
+}
+
+function prices_length_ok(prices) {
+  return prices.length >= 20;
 }
 
 // ───────────────────────────────────────────
